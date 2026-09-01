@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Webcam from "react-webcam";
 
 /*
@@ -22,7 +22,7 @@ import Webcam from "react-webcam";
 
 const frameOptions = [
     // 1 PHOTO
-    {id: "f0", src: "assets/frames/slot1/f0.png", slotCount: 1},
+    { id: "f0", src: "assets/frames/slot1/f0.png", slotCount: 1 },
     { id: "f14", src: "assets/frames/slot1/f14.png", slotCount: 1 },
     { id: "f16", src: "assets/frames/slot1/f16.png", slotCount: 1 },
     { id: "f2", src: "assets/frames/slot1/f2.png", slotCount: 1 },
@@ -51,7 +51,7 @@ const frameOptions = [
     // 4 PHOTOS
     { id: "f15", src: "assets/frames/slot4/f15.png", slotCount: 4 },
     { id: "f7", src: "assets/frames/slot4/f7.png", slotCount: 4 },
-    { id: "f23", src: "assets/frames/slot4/f23.png", slotCount: 4},
+    { id: "f23", src: "assets/frames/slot4/f23.png", slotCount: 4 },
     { id: "cst", src: "assets/frames/slot4/cst.png", slotCount: 4 },
     { id: "f20", src: "assets/frames/slot4/f20.png", slotCount: 4 },
     { id: "f21", src: "assets/frames/slot4/f21.png", slotCount: 4 },
@@ -62,7 +62,7 @@ const frameOptions = [
     { id: "f5", src: "assets/frames/slot6/f5.png", slotCount: 6 },
     { id: "f9", src: "assets/frames/slot6/f9.png", slotCount: 6 },
 
-    // photos 9
+    // 9 PHOTOS
     { id: "cake", src: "assets/frames/slot6/cake.png", slotCount: 9 },
 ];
 
@@ -112,7 +112,7 @@ const stickerOptions = [
     "assets/stickers/pokémon15.png",
     "assets/stickers/pokémon16.png",
     "assets/stickers/pokémon17.png",
-]
+];
 
 /*
 |--------------------------------------------------------------------------
@@ -288,6 +288,7 @@ export default function PhotoBooth() {
 
     const detectTransparentSlots = (image, expectedCount) => {
         const tempCanvas = document.createElement("canvas");
+
         tempCanvas.width = image.width;
         tempCanvas.height = image.height;
 
@@ -312,6 +313,7 @@ export default function PhotoBooth() {
 
         for (let i = 0; i < width * height; i++) {
             const alpha = pixels[i * 4 + 3];
+
             transparent[i] = alpha < 30 ? 1 : 0;
         }
 
@@ -333,11 +335,15 @@ export default function PhotoBooth() {
             for (let x = 0; x < width; x++) {
                 const index = y * width + x;
 
-                if (transparent[index] !== 1 || visited[index] === 1) {
+                if (
+                    transparent[index] !== 1 ||
+                    visited[index] === 1
+                ) {
                     continue;
                 }
 
                 const queue = [[x, y]];
+
                 visited[index] = 1;
 
                 let minX = x;
@@ -348,18 +354,37 @@ export default function PhotoBooth() {
                 let queueIndex = 0;
 
                 while (queueIndex < queue.length) {
-                    const [currentX, currentY] = queue[queueIndex++];
+                    const [currentX, currentY] =
+                        queue[queueIndex++];
 
                     area++;
 
-                    minX = Math.min(minX, currentX);
-                    maxX = Math.max(maxX, currentX);
-                    minY = Math.min(minY, currentY);
-                    maxY = Math.max(maxY, currentY);
+                    minX = Math.min(
+                        minX,
+                        currentX
+                    );
+
+                    maxX = Math.max(
+                        maxX,
+                        currentX
+                    );
+
+                    minY = Math.min(
+                        minY,
+                        currentY
+                    );
+
+                    maxY = Math.max(
+                        maxY,
+                        currentY
+                    );
 
                     for (const [dx, dy] of directions) {
-                        const nx = currentX + dx;
-                        const ny = currentY + dy;
+                        const nx =
+                            currentX + dx;
+
+                        const ny =
+                            currentY + dy;
 
                         if (
                             nx < 0 ||
@@ -370,20 +395,28 @@ export default function PhotoBooth() {
                             continue;
                         }
 
-                        const nIndex = ny * width + nx;
+                        const nIndex =
+                            ny * width + nx;
 
                         if (
                             transparent[nIndex] === 1 &&
                             visited[nIndex] === 0
                         ) {
                             visited[nIndex] = 1;
-                            queue.push([nx, ny]);
+
+                            queue.push([
+                                nx,
+                                ny
+                            ]);
                         }
                     }
                 }
 
-                const componentWidth = maxX - minX + 1;
-                const componentHeight = maxY - minY + 1;
+                const componentWidth =
+                    maxX - minX + 1;
+
+                const componentHeight =
+                    maxY - minY + 1;
 
                 if (
                     area > 5000 &&
@@ -401,34 +434,58 @@ export default function PhotoBooth() {
             }
         }
 
-        let candidates = components.filter(
-            (component) =>
-                component.x > 1 &&
-                component.y > 1 &&
-                component.x + component.width < width - 1 &&
-                component.y + component.height < height - 1
+        let candidates =
+            components.filter(
+                (component) =>
+                    component.x > 1 &&
+                    component.y > 1 &&
+                    component.x +
+                        component.width <
+                        width - 1 &&
+                    component.y +
+                        component.height <
+                        height - 1
+            );
+
+        candidates.sort(
+            (a, b) => b.area - a.area
         );
 
-        candidates.sort((a, b) => b.area - a.area);
-
-        if (candidates.length > expectedCount) {
-            candidates = candidates.slice(0, expectedCount);
+        if (
+            candidates.length >
+            expectedCount
+        ) {
+            candidates =
+                candidates.slice(
+                    0,
+                    expectedCount
+                );
         }
 
         candidates.sort((a, b) => {
-            const rowTolerance = Math.min(a.height, b.height) * 0.4;
+            const rowTolerance =
+                Math.min(
+                    a.height,
+                    b.height
+                ) * 0.4;
 
-            if (Math.abs(a.y - b.y) > rowTolerance) {
+            if (
+                Math.abs(
+                    a.y - b.y
+                ) > rowTolerance
+            ) {
                 return a.y - b.y;
             }
 
             return a.x - b.x;
         });
 
-        return candidates.map((slot, index) => ({
-            ...slot,
-            index
-        }));
+        return candidates.map(
+            (slot, index) => ({
+                ...slot,
+                index
+            })
+        );
     };
 
     /*
@@ -438,27 +495,20 @@ export default function PhotoBooth() {
     */
 
     const getSlotForPhoto = (photo) => {
-        return detectedSlots[photo.slotIndex] || null;
+        return (
+            detectedSlots[
+                photo.slotIndex
+            ] || null
+        );
     };
 
     /*
     |--------------------------------------------------------------------------
     | DRAW CANVAS
     |--------------------------------------------------------------------------
-    |
-    | Drawing order:
-    |
-    | 1. Photos
-    | 2. Frame
-    | 3. Stickers
-    | 4. Custom Text
-    |
-    | Custom text is therefore always above everything else.
-    |
-    |--------------------------------------------------------------------------
     */
 
-    const drawCanvas = () => {
+    const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         const frame = frameImgRef.current;
 
@@ -466,12 +516,18 @@ export default function PhotoBooth() {
             return;
         }
 
-        const ctx = canvas.getContext("2d");
+        const ctx =
+            canvas.getContext("2d");
 
         canvas.width = frame.width;
         canvas.height = frame.height;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
         /*
         |----------------------------------------------------------------------
@@ -480,17 +536,30 @@ export default function PhotoBooth() {
         */
 
         photos.forEach((photo) => {
-            const slot = getSlotForPhoto(photo);
+            const slot =
+                detectedSlots[
+                    photo.slotIndex
+                ] || null;
 
             if (!slot) {
                 return;
             }
 
-            const drawWidth = photo.img.width * photo.scale;
-            const drawHeight = photo.img.height * photo.scale;
+            const drawWidth =
+                photo.img.width *
+                photo.scale;
 
-            const centerX = slot.x + slot.width / 2;
-            const centerY = slot.y + slot.height / 2;
+            const drawHeight =
+                photo.img.height *
+                photo.scale;
+
+            const centerX =
+                slot.x +
+                slot.width / 2;
+
+            const centerY =
+                slot.y +
+                slot.height / 2;
 
             const photoX =
                 centerX -
@@ -505,12 +574,14 @@ export default function PhotoBooth() {
             ctx.save();
 
             ctx.beginPath();
+
             ctx.rect(
                 slot.x,
                 slot.y,
                 slot.width,
                 slot.height
             );
+
             ctx.clip();
 
             ctx.drawImage(
@@ -544,84 +615,117 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        stickers.forEach((sticker, index) => {
-            if (!sticker.img) {
-                return;
-            }
+        stickers.forEach(
+            (sticker, index) => {
+                if (!sticker.img) {
+                    return;
+                }
 
-            ctx.drawImage(
-                sticker.img,
-                sticker.x,
-                sticker.y,
-                sticker.width,
-                sticker.height
-            );
-
-            if (index === selectedSticker) {
-                ctx.strokeStyle = "#ff7aa2";
-                ctx.lineWidth = 4;
-
-                ctx.strokeRect(
+                ctx.drawImage(
+                    sticker.img,
                     sticker.x,
                     sticker.y,
                     sticker.width,
                     sticker.height
                 );
+
+                if (
+                    index ===
+                    selectedSticker
+                ) {
+                    ctx.strokeStyle =
+                        "#ff7aa2";
+
+                    ctx.lineWidth = 4;
+
+                    ctx.strokeRect(
+                        sticker.x,
+                        sticker.y,
+                        sticker.width,
+                        sticker.height
+                    );
+                }
             }
-        });
+        );
 
         /*
         |----------------------------------------------------------------------
         | DRAW CUSTOM TEXT
         |----------------------------------------------------------------------
-        |
-        | Text is drawn LAST so it stays above photos, frame and stickers.
-        |
-        |---------------------------------------------------------------------- 
         */
 
-        textItems.forEach((textItem, index) => {
-            if (!textItem.text) {
-                return;
-            }
+        textItems.forEach(
+            (textItem, index) => {
+                if (!textItem.text) {
+                    return;
+                }
 
-            const weight = textItem.bold ? "bold" : "normal";
-            const style = textItem.italic ? "italic" : "normal";
+                const weight =
+                    textItem.bold
+                        ? "bold"
+                        : "normal";
 
-            ctx.save();
+                const style =
+                    textItem.italic
+                        ? "italic"
+                        : "normal";
 
-            ctx.font =
-                `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
+                ctx.save();
 
-            ctx.fillStyle = textItem.color;
-            ctx.textBaseline = "top";
+                ctx.font =
+                    `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
 
-            ctx.fillText(
-                textItem.text,
-                textItem.x,
-                textItem.y
-            );
+                ctx.fillStyle =
+                    textItem.color;
 
-            if (index === selectedText) {
-                const metrics = ctx.measureText(textItem.text);
+                ctx.textBaseline =
+                    "top";
 
-                const textWidth = metrics.width;
-                const textHeight = textItem.size;
-
-                ctx.strokeStyle = "#ff7aa2";
-                ctx.lineWidth = 3;
-
-                ctx.strokeRect(
-                    textItem.x - 6,
-                    textItem.y - 6,
-                    textWidth + 12,
-                    textHeight + 12
+                ctx.fillText(
+                    textItem.text,
+                    textItem.x,
+                    textItem.y
                 );
-            }
 
-            ctx.restore();
-        });
-    };
+                if (
+                    index ===
+                    selectedText
+                ) {
+                    const metrics =
+                        ctx.measureText(
+                            textItem.text
+                        );
+
+                    const textWidth =
+                        metrics.width;
+
+                    const textHeight =
+                        textItem.size;
+
+                    ctx.strokeStyle =
+                        "#ff7aa2";
+
+                    ctx.lineWidth = 3;
+
+                    ctx.strokeRect(
+                        textItem.x - 6,
+                        textItem.y - 6,
+                        textWidth + 12,
+                        textHeight + 12
+                    );
+                }
+
+                ctx.restore();
+            }
+        );
+    }, [
+        photos,
+        stickers,
+        textItems,
+        selectedSticker,
+        selectedText,
+        detectedSlots
+    ]);
 
     /*
     |--------------------------------------------------------------------------
@@ -635,21 +739,21 @@ export default function PhotoBooth() {
         }
 
         const img = new Image();
-        img.src = selectedFrameConfig.src;
+
+        img.src =
+            selectedFrameConfig.src;
 
         img.onload = () => {
-            frameImgRef.current = img;
+            frameImgRef.current =
+                img;
 
-            const slots = detectTransparentSlots(
-                img,
-                selectedFrameConfig.slotCount
-            );
+            const slots =
+                detectTransparentSlots(
+                    img,
+                    selectedFrameConfig.slotCount
+                );
 
             setDetectedSlots(slots);
-
-            setTimeout(() => {
-                drawCanvas();
-            }, 0);
         };
 
         img.onerror = () => {
@@ -668,14 +772,7 @@ export default function PhotoBooth() {
 
     useEffect(() => {
         drawCanvas();
-    }, [
-        photos,
-        stickers,
-        textItems,
-        selectedSticker,
-        selectedText,
-        detectedSlots
-    ]);
+    }, [drawCanvas]);
 
     /*
     |--------------------------------------------------------------------------
@@ -684,33 +781,60 @@ export default function PhotoBooth() {
     */
 
     useEffect(() => {
-        const handleKeyDown = (event) => {
+        const handleKeyDown = (
+            event
+        ) => {
             if (
-                (event.key === "Delete" ||
-                    event.key === "Backspace") &&
+                (
+                    event.key ===
+                        "Delete" ||
+                    event.key ===
+                        "Backspace"
+                ) &&
                 mode === "decorate"
             ) {
-                if (selectedText !== null) {
-                    setTextItems((previous) =>
-                        previous.filter(
-                            (_, index) =>
-                                index !== selectedText
-                        )
+                if (
+                    selectedText !==
+                    null
+                ) {
+                    setTextItems(
+                        (previous) =>
+                            previous.filter(
+                                (
+                                    _,
+                                    index
+                                ) =>
+                                    index !==
+                                    selectedText
+                            )
                     );
 
-                    setSelectedText(null);
+                    setSelectedText(
+                        null
+                    );
+
                     return;
                 }
 
-                if (selectedSticker !== null) {
-                    setStickers((previous) =>
-                        previous.filter(
-                            (_, index) =>
-                                index !== selectedSticker
-                        )
+                if (
+                    selectedSticker !==
+                    null
+                ) {
+                    setStickers(
+                        (previous) =>
+                            previous.filter(
+                                (
+                                    _,
+                                    index
+                                ) =>
+                                    index !==
+                                    selectedSticker
+                            )
                     );
 
-                    setSelectedSticker(null);
+                    setSelectedSticker(
+                        null
+                    );
                 }
             }
         };
@@ -739,13 +863,16 @@ export default function PhotoBooth() {
     */
 
     const handleBack = () => {
-        if (mode === "decorate") {
+        if (
+            mode === "decorate"
+        ) {
             setMode("photo");
             setCanTakePhoto(false);
             setStickers([]);
             setSelectedSticker(null);
             setTextItems([]);
             setSelectedText(null);
+
             return;
         }
 
@@ -776,29 +903,40 @@ export default function PhotoBooth() {
         const totalSlots =
             selectedFrameConfig.slotCount;
 
-        if (photoCount >= totalSlots) {
+        if (
+            photoCount >=
+            totalSlots
+        ) {
             return;
         }
 
         const slot =
-            detectedSlots[photoCount];
+            detectedSlots[
+                photoCount
+            ];
 
         if (!slot) {
             console.error(
                 "Slot was not detected:",
                 photoCount
             );
+
             return;
         }
 
         const scaleX =
-            slot.width / img.width;
+            slot.width /
+            img.width;
 
         const scaleY =
-            slot.height / img.height;
+            slot.height /
+            img.height;
 
         const scale =
-            Math.max(scaleX, scaleY);
+            Math.max(
+                scaleX,
+                scaleY
+            );
 
         const drawWidth =
             img.width * scale;
@@ -806,31 +944,47 @@ export default function PhotoBooth() {
         const drawHeight =
             img.height * scale;
 
-        setPhotos((previous) => [
-            ...previous,
-            {
-                img,
-                slotIndex: photoCount,
-                scale,
-                offsetX: 0,
-                offsetY: 0,
-                drawWidth,
-                drawHeight
+        setPhotos(
+            (previous) => [
+                ...previous,
+                {
+                    img,
+                    slotIndex:
+                        photoCount,
+                    scale,
+                    offsetX: 0,
+                    offsetY: 0,
+                    drawWidth,
+                    drawHeight
+                }
+            ]
+        );
+
+        setPhotoCount(
+            (current) => {
+                const next =
+                    current + 1;
+
+                if (
+                    next >=
+                    totalSlots
+                ) {
+                    setMode(
+                        "decorate"
+                    );
+
+                    setCanTakePhoto(
+                        false
+                    );
+                } else {
+                    setCanTakePhoto(
+                        true
+                    );
+                }
+
+                return next;
             }
-        ]);
-
-        setPhotoCount((current) => {
-            const next = current + 1;
-
-            if (next >= totalSlots) {
-                setMode("decorate");
-                setCanTakePhoto(false);
-            } else {
-                setCanTakePhoto(true);
-            }
-
-            return next;
-        });
+        );
     };
 
     /*
@@ -840,7 +994,9 @@ export default function PhotoBooth() {
     */
 
     const takePhotoNow = () => {
-        if (!webcamRef.current) {
+        if (
+            !webcamRef.current
+        ) {
             return;
         }
 
@@ -852,6 +1008,7 @@ export default function PhotoBooth() {
         }
 
         const img = new Image();
+
         img.src = src;
 
         img.onload = () => {
@@ -890,12 +1047,22 @@ export default function PhotoBooth() {
             setInterval(() => {
                 current--;
 
-                if (current === 0) {
-                    clearInterval(interval);
-                    setCountdown(null);
+                if (
+                    current === 0
+                ) {
+                    clearInterval(
+                        interval
+                    );
+
+                    setCountdown(
+                        null
+                    );
+
                     takePhotoNow();
                 } else {
-                    setCountdown(current);
+                    setCountdown(
+                        current
+                    );
                 }
             }, 1000);
     };
@@ -906,7 +1073,9 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const uploadPhoto = (event) => {
+    const uploadPhoto = (
+        event
+    ) => {
         const file =
             event.target.files[0];
 
@@ -918,8 +1087,11 @@ export default function PhotoBooth() {
             new FileReader();
 
         reader.onload = () => {
-            const img = new Image();
-            img.src = reader.result;
+            const img =
+                new Image();
+
+            img.src =
+                reader.result;
 
             img.onload = () => {
                 addPhoto(img);
@@ -942,12 +1114,20 @@ export default function PhotoBooth() {
             return;
         }
 
-        setPhotos((previous) =>
-            previous.slice(0, -1)
+        setPhotos(
+            (previous) =>
+                previous.slice(
+                    0,
+                    -1
+                )
         );
 
-        setPhotoCount((current) =>
-            Math.max(0, current - 1)
+        setPhotoCount(
+            (current) =>
+                Math.max(
+                    0,
+                    current - 1
+                )
         );
 
         setCanTakePhoto(true);
@@ -962,7 +1142,9 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const getCoords = (event) => {
+    const getCoords = (
+        event
+    ) => {
         const canvas =
             canvasRef.current;
 
@@ -978,16 +1160,24 @@ export default function PhotoBooth() {
 
         return {
             x:
-                (event.clientX -
-                    rect.left) *
-                (canvas.width /
-                    rect.width),
+                (
+                    event.clientX -
+                    rect.left
+                ) *
+                (
+                    canvas.width /
+                    rect.width
+                ),
 
             y:
-                (event.clientY -
-                    rect.top) *
-                (canvas.height /
-                    rect.height)
+                (
+                    event.clientY -
+                    rect.top
+                ) *
+                (
+                    canvas.height /
+                    rect.height
+                )
         };
     };
 
@@ -997,7 +1187,9 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const handleMouseDown = (event) => {
+    const handleMouseDown = (
+        event
+    ) => {
         const { x, y } =
             getCoords(event);
 
@@ -1007,9 +1199,12 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        if (mode === "photo") {
+        if (
+            mode === "photo"
+        ) {
             for (
-                let i = photos.length - 1;
+                let i =
+                    photos.length - 1;
                 i >= 0;
                 i--
             ) {
@@ -1017,7 +1212,9 @@ export default function PhotoBooth() {
                     photos[i];
 
                 const slot =
-                    getSlotForPhoto(photo);
+                    getSlotForPhoto(
+                        photo
+                    );
 
                 if (!slot) {
                     continue;
@@ -1033,15 +1230,19 @@ export default function PhotoBooth() {
 
                 const photoX =
                     slot.x +
-                    (slot.width -
-                        drawWidth) /
+                    (
+                        slot.width -
+                        drawWidth
+                    ) /
                         2 +
                     photo.offsetX;
 
                 const photoY =
                     slot.y +
-                    (slot.height -
-                        drawHeight) /
+                    (
+                        slot.height -
+                        drawHeight
+                    ) /
                         2 +
                     photo.offsetY;
 
@@ -1049,11 +1250,11 @@ export default function PhotoBooth() {
                     x >= photoX &&
                     x <=
                         photoX +
-                            drawWidth &&
+                        drawWidth &&
                     y >= photoY &&
                     y <=
                         photoY +
-                            drawHeight
+                        drawHeight
                 ) {
                     setDraggingPhotoIndex(
                         i
@@ -1079,14 +1280,13 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        if (mode === "decorate") {
+        if (
+            mode ===
+            "decorate"
+        ) {
             /*
             |------------------------------------------------------------------
             | CHECK TEXT FIRST
-            |------------------------------------------------------------------
-            |
-            | Text is the top layer, so it gets selection priority.
-            |
             |------------------------------------------------------------------
             */
 
@@ -1099,7 +1299,9 @@ export default function PhotoBooth() {
                 const textItem =
                     textItems[i];
 
-                if (!textItem.text) {
+                if (
+                    !textItem.text
+                ) {
                     continue;
                 }
 
@@ -1132,22 +1334,28 @@ export default function PhotoBooth() {
                 if (
                     x >=
                         textItem.x -
-                            10 &&
+                        10 &&
                     x <=
                         textItem.x +
-                            textWidth +
-                            10 &&
+                        textWidth +
+                        10 &&
                     y >=
                         textItem.y -
-                            10 &&
+                        10 &&
                     y <=
                         textItem.y +
-                            textHeight +
-                            10
+                        textHeight +
+                        10
                 ) {
                     setDraggingText(i);
-                    setSelectedText(i);
-                    setSelectedSticker(null);
+
+                    setSelectedText(
+                        i
+                    );
+
+                    setSelectedSticker(
+                        null
+                    );
 
                     setDragOffset({
                         x:
@@ -1178,18 +1386,28 @@ export default function PhotoBooth() {
                     stickers[i];
 
                 if (
-                    x >= sticker.x &&
+                    x >=
+                        sticker.x &&
                     x <=
                         sticker.x +
-                            sticker.width &&
-                    y >= sticker.y &&
+                        sticker.width &&
+                    y >=
+                        sticker.y &&
                     y <=
                         sticker.y +
-                            sticker.height
+                        sticker.height
                 ) {
-                    setDraggingSticker(i);
-                    setSelectedSticker(i);
-                    setSelectedText(null);
+                    setDraggingSticker(
+                        i
+                    );
+
+                    setSelectedSticker(
+                        i
+                    );
+
+                    setSelectedText(
+                        null
+                    );
 
                     setDragOffset({
                         x:
@@ -1215,7 +1433,9 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (
+        event
+    ) => {
         const { x, y } =
             getCoords(event);
 
@@ -1230,103 +1450,111 @@ export default function PhotoBooth() {
                 null &&
             mode === "photo"
         ) {
-            setPhotos((previous) => {
-                const updated = [
-                    ...previous
-                ];
-
-                const photo =
-                    updated[
-                        draggingPhotoIndex
+            setPhotos(
+                (previous) => {
+                    const updated = [
+                        ...previous
                     ];
 
-                if (!photo) {
+                    const photo =
+                        updated[
+                            draggingPhotoIndex
+                        ];
+
+                    if (!photo) {
+                        return updated;
+                    }
+
+                    const slot =
+                        getSlotForPhoto(
+                            photo
+                        );
+
+                    if (!slot) {
+                        return updated;
+                    }
+
+                    const drawWidth =
+                        photo.img.width *
+                        photo.scale;
+
+                    const drawHeight =
+                        photo.img.height *
+                        photo.scale;
+
+                    const centerX =
+                        slot.x +
+                        slot.width /
+                            2;
+
+                    const centerY =
+                        slot.y +
+                        slot.height /
+                            2;
+
+                    let newOffsetX =
+                        x -
+                        dragOffset.x -
+                        (
+                            centerX -
+                            drawWidth / 2
+                        );
+
+                    let newOffsetY =
+                        y -
+                        dragOffset.y -
+                        (
+                            centerY -
+                            drawHeight / 2
+                        );
+
+                    const maxOffsetX =
+                        Math.max(
+                            0,
+                            (
+                                drawWidth -
+                                slot.width
+                            ) /
+                                2
+                        );
+
+                    const maxOffsetY =
+                        Math.max(
+                            0,
+                            (
+                                drawHeight -
+                                slot.height
+                            ) /
+                                2
+                        );
+
+                    newOffsetX =
+                        Math.max(
+                            -maxOffsetX,
+                            Math.min(
+                                maxOffsetX,
+                                newOffsetX
+                            )
+                        );
+
+                    newOffsetY =
+                        Math.max(
+                            -maxOffsetY,
+                            Math.min(
+                                maxOffsetY,
+                                newOffsetY
+                            )
+                        );
+
+                    photo.offsetX =
+                        newOffsetX;
+
+                    photo.offsetY =
+                        newOffsetY;
+
                     return updated;
                 }
-
-                const slot =
-                    getSlotForPhoto(
-                        photo
-                    );
-
-                if (!slot) {
-                    return updated;
-                }
-
-                const drawWidth =
-                    photo.img.width *
-                    photo.scale;
-
-                const drawHeight =
-                    photo.img.height *
-                    photo.scale;
-
-                const centerX =
-                    slot.x +
-                    slot.width /
-                        2;
-
-                const centerY =
-                    slot.y +
-                    slot.height /
-                        2;
-
-                let newOffsetX =
-                    x -
-                    dragOffset.x -
-                    (centerX -
-                        drawWidth /
-                            2);
-
-                let newOffsetY =
-                    y -
-                    dragOffset.y -
-                    (centerY -
-                        drawHeight /
-                            2);
-
-                const maxOffsetX =
-                    Math.max(
-                        0,
-                        (drawWidth -
-                            slot.width) /
-                            2
-                    );
-
-                const maxOffsetY =
-                    Math.max(
-                        0,
-                        (drawHeight -
-                            slot.height) /
-                            2
-                    );
-
-                newOffsetX =
-                    Math.max(
-                        -maxOffsetX,
-                        Math.min(
-                            maxOffsetX,
-                            newOffsetX
-                        )
-                    );
-
-                newOffsetY =
-                    Math.max(
-                        -maxOffsetY,
-                        Math.min(
-                            maxOffsetY,
-                            newOffsetY
-                        )
-                    );
-
-                photo.offsetX =
-                    newOffsetX;
-
-                photo.offsetY =
-                    newOffsetY;
-
-                return updated;
-            });
+            );
         }
 
         /*
@@ -1340,35 +1568,37 @@ export default function PhotoBooth() {
                 null &&
             mode === "decorate"
         ) {
-            setStickers((previous) => {
-                const updated = [
-                    ...previous
-                ];
+            setStickers(
+                (previous) => {
+                    const updated = [
+                        ...previous
+                    ];
 
-                if (
-                    !updated[
+                    if (
+                        !updated[
+                            draggingSticker
+                        ]
+                    ) {
+                        return updated;
+                    }
+
+                    updated[
                         draggingSticker
-                    ]
-                ) {
+                    ] = {
+                        ...updated[
+                            draggingSticker
+                        ],
+                        x:
+                            x -
+                            dragOffset.x,
+                        y:
+                            y -
+                            dragOffset.y
+                    };
+
                     return updated;
                 }
-
-                updated[
-                    draggingSticker
-                ] = {
-                    ...updated[
-                        draggingSticker
-                    ],
-                    x:
-                        x -
-                        dragOffset.x,
-                    y:
-                        y -
-                        dragOffset.y
-                };
-
-                return updated;
-            });
+            );
         }
 
         /*
@@ -1382,35 +1612,37 @@ export default function PhotoBooth() {
                 null &&
             mode === "decorate"
         ) {
-            setTextItems((previous) => {
-                const updated = [
-                    ...previous
-                ];
+            setTextItems(
+                (previous) => {
+                    const updated = [
+                        ...previous
+                    ];
 
-                if (
-                    !updated[
+                    if (
+                        !updated[
+                            draggingText
+                        ]
+                    ) {
+                        return updated;
+                    }
+
+                    updated[
                         draggingText
-                    ]
-                ) {
+                    ] = {
+                        ...updated[
+                            draggingText
+                        ],
+                        x:
+                            x -
+                            dragOffset.x,
+                        y:
+                            y -
+                            dragOffset.y
+                    };
+
                     return updated;
                 }
-
-                updated[
-                    draggingText
-                ] = {
-                    ...updated[
-                        draggingText
-                    ],
-                    x:
-                        x -
-                        dragOffset.x,
-                    y:
-                        y -
-                        dragOffset.y
-                };
-
-                return updated;
-            });
+            );
         }
     };
 
@@ -1432,21 +1664,26 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const addSticker = (src) => {
+    const addSticker = (
+        src
+    ) => {
         const img = new Image();
+
         img.src = src;
 
         img.onload = () => {
-            setStickers((previous) => [
-                ...previous,
-                {
-                    img,
-                    x: 400,
-                    y: 100,
-                    width: 150,
-                    height: 150
-                }
-            ]);
+            setStickers(
+                (previous) => [
+                    ...previous,
+                    {
+                        img,
+                        x: 400,
+                        y: 100,
+                        width: 150,
+                        height: 150
+                    }
+                ]
+            );
 
             setSelectedSticker(
                 stickers.length
@@ -1474,25 +1711,29 @@ export default function PhotoBooth() {
             text: finalText,
             x: 150,
             y: 100,
-            size: Number(textSize),
+            size: Number(
+                textSize
+            ),
             color: textColor,
             font: textFont,
             bold: textBold,
             italic: textItalic
         };
 
-        setTextItems((previous) => {
-            const updated = [
-                ...previous,
-                newItem
-            ];
+        setTextItems(
+            (previous) => {
+                const updated = [
+                    ...previous,
+                    newItem
+                ];
 
-            setSelectedText(
-                updated.length - 1
-            );
+                setSelectedText(
+                    updated.length - 1
+                );
 
-            return updated;
-        });
+                return updated;
+            }
+        );
 
         setSelectedSticker(null);
         setNewText("");
@@ -1509,35 +1750,39 @@ export default function PhotoBooth() {
         value
     ) => {
         if (
-            selectedText === null
+            selectedText ===
+            null
         ) {
             return;
         }
 
-        setTextItems((previous) => {
-            const updated = [
-                ...previous
-            ];
+        setTextItems(
+            (previous) => {
+                const updated = [
+                    ...previous
+                ];
 
-            if (
-                !updated[
+                if (
+                    !updated[
+                        selectedText
+                    ]
+                ) {
+                    return updated;
+                }
+
+                updated[
                     selectedText
-                ]
-            ) {
+                ] = {
+                    ...updated[
+                        selectedText
+                    ],
+                    [property]:
+                        value
+                };
+
                 return updated;
             }
-
-            updated[
-                selectedText
-            ] = {
-                ...updated[
-                    selectedText
-                ],
-                [property]: value
-            };
-
-            return updated;
-        });
+        );
     };
 
     /*
@@ -1547,15 +1792,11 @@ export default function PhotoBooth() {
     */
 
     const downloadPhoto = () => {
-        if (!canvasRef.current) {
+        if (
+            !canvasRef.current
+        ) {
             return;
         }
-
-        /*
-        |----------------------------------------------------------------------
-        | Remove selection outlines before downloading.
-        |----------------------------------------------------------------------
-        */
 
         const previousSticker =
             selectedSticker;
@@ -1601,7 +1842,9 @@ export default function PhotoBooth() {
     */
 
     const getCanvasStyle = () => {
-        if (!frameImgRef.current) {
+        if (
+            !frameImgRef.current
+        ) {
             return {
                 width: 200,
                 height: 500
@@ -1609,10 +1852,12 @@ export default function PhotoBooth() {
         }
 
         const width =
-            frameImgRef.current.width;
+            frameImgRef.current
+                .width;
 
         const height =
-            frameImgRef.current.height;
+            frameImgRef.current
+                .height;
 
         const ratio =
             width / height;
@@ -1621,7 +1866,8 @@ export default function PhotoBooth() {
             MAX_CANVAS_WIDTH;
 
         let displayHeight =
-            displayWidth / ratio;
+            displayWidth /
+            ratio;
 
         if (
             displayHeight >
@@ -1636,8 +1882,10 @@ export default function PhotoBooth() {
         }
 
         return {
-            width: displayWidth,
-            height: displayHeight
+            width:
+                displayWidth,
+            height:
+                displayHeight
         };
     };
 
@@ -1649,7 +1897,9 @@ export default function PhotoBooth() {
 
     const selectedTextItem =
         selectedText !== null
-            ? textItems[selectedText]
+            ? textItems[
+                  selectedText
+              ]
             : null;
 
     /*
@@ -1691,7 +1941,11 @@ export default function PhotoBooth() {
                     </button>
                 )}
 
-                <h1 style={titleBar}>
+                <h1
+                    style={
+                        titleBar
+                    }
+                >
                     {!selectedFrame
                         ? "₊✩‧₊˚ Select a frame౨ৎ ˚₊✩‧₊"
                         : mode ===
@@ -1709,12 +1963,6 @@ export default function PhotoBooth() {
                 }
             >
                 {!selectedFrame ? (
-                    /*
-                    |------------------------------------------------------------------
-                    | FRAME SELECTION
-                    |------------------------------------------------------------------
-                    */
-
                     <div
                         style={{
                             display:
@@ -1727,7 +1975,9 @@ export default function PhotoBooth() {
                         }}
                     >
                         {frameOptions.map(
-                            (frame) => (
+                            (
+                                frame
+                            ) => (
                                 <div
                                     key={
                                         frame.id
@@ -1805,14 +2055,10 @@ export default function PhotoBooth() {
                         )}
                     </div>
                 ) : (
-                    /*
-                    |------------------------------------------------------------------
-                    | PHOTO / DECORATION
-                    |------------------------------------------------------------------
-                    */
-
                     <div
-                        style={row}
+                        style={
+                            row
+                        }
                     >
                         <div>
                             {/* PHOTO MODE */}
@@ -1846,7 +2092,8 @@ export default function PhotoBooth() {
                                         style={{
                                             width:
                                                 "100%",
-                                            borderRadius: 12
+                                            borderRadius:
+                                                12
                                         }}
                                     />
 
@@ -1875,7 +2122,8 @@ export default function PhotoBooth() {
                                                     "0 4px 20px rgba(0,0,0,0.5)",
                                                 background:
                                                     "rgba(0,0,0,0.25)",
-                                                borderRadius: 12,
+                                                borderRadius:
+                                                    12,
                                                 pointerEvents:
                                                     "none"
                                             }}
@@ -1890,7 +2138,8 @@ export default function PhotoBooth() {
 
                                     <div
                                         style={{
-                                            marginTop: 16,
+                                            marginTop:
+                                                16,
                                             display:
                                                 "flex",
                                             gap: 12,
@@ -1940,7 +2189,8 @@ export default function PhotoBooth() {
                                             <button
                                                 style={{
                                                     ...buttonStyle,
-                                                    fontSize: 22,
+                                                    fontSize:
+                                                        22,
                                                     padding:
                                                         "4px 10px"
                                                 }}
@@ -1958,14 +2208,16 @@ export default function PhotoBooth() {
                                     {selectedFrameConfig && (
                                         <div
                                             style={{
-                                                marginTop: 10,
+                                                marginTop:
+                                                    10,
                                                 textAlign:
                                                     "center",
                                                 fontFamily:
                                                     "CantikaCute",
                                                 color:
                                                     "#8c5b4a",
-                                                fontSize: 18
+                                                fontSize:
+                                                    18
                                             }}
                                         >
                                             Photo{" "}
@@ -2041,8 +2293,10 @@ export default function PhotoBooth() {
                                         style={{
                                             border:
                                                 "2px solid #8c5b4a",
-                                            borderRadius: 12,
-                                            padding: 14,
+                                            borderRadius:
+                                                12,
+                                            padding:
+                                                14,
                                             background:
                                                 "rgba(255,255,255,0.8)",
                                             display:
@@ -2058,7 +2312,8 @@ export default function PhotoBooth() {
                                                     "CantikaCute",
                                                 color:
                                                     "#8c5b4a",
-                                                fontSize: 22
+                                                fontSize:
+                                                    22
                                             }}
                                         >
                                             Add Custom Text
@@ -2094,10 +2349,12 @@ export default function PhotoBooth() {
                                             style={{
                                                 padding:
                                                     "10px",
-                                                fontSize: 18,
+                                                fontSize:
+                                                    18,
                                                 border:
                                                     "1px solid #8c5b4a",
-                                                borderRadius: 8,
+                                                borderRadius:
+                                                    8,
                                                 outline:
                                                     "none"
                                             }}
@@ -2124,7 +2381,8 @@ export default function PhotoBooth() {
                                                     "CantikaCute",
                                                 color:
                                                     "#8c5b4a",
-                                                fontSize: 17
+                                                fontSize:
+                                                    17
                                             }}
                                         >
                                             Font
@@ -2161,8 +2419,10 @@ export default function PhotoBooth() {
                                             style={{
                                                 padding:
                                                     "8px",
-                                                fontSize: 16,
-                                                borderRadius: 8,
+                                                fontSize:
+                                                    16,
+                                                borderRadius:
+                                                    8,
                                                 border:
                                                     "1px solid #8c5b4a"
                                             }}
@@ -2195,7 +2455,8 @@ export default function PhotoBooth() {
                                                     "CantikaCute",
                                                 color:
                                                     "#8c5b4a",
-                                                fontSize: 17
+                                                fontSize:
+                                                    17
                                             }}
                                         >
                                             Size
@@ -2260,7 +2521,8 @@ export default function PhotoBooth() {
                                                     "CantikaCute",
                                                 color:
                                                     "#8c5b4a",
-                                                fontSize: 17
+                                                fontSize:
+                                                    17
                                             }}
                                         >
                                             Text Color
@@ -2421,7 +2683,8 @@ export default function PhotoBooth() {
                                 }
                                 style={{
                                     ...getCanvasStyle(),
-                                    borderRadius: 16,
+                                    borderRadius:
+                                        16,
                                     boxShadow:
                                         "0 10px 30px rgba(0,0,0,0.15)",
                                     cursor:
@@ -2450,7 +2713,8 @@ export default function PhotoBooth() {
                                 "decorate" && (
                                 <div
                                     style={{
-                                        marginTop: 16,
+                                        marginTop:
+                                            16,
                                         display:
                                             "flex",
                                         justifyContent:
