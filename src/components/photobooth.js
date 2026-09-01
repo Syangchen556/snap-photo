@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Webcam from "react-webcam";
 
 /*
@@ -140,79 +140,38 @@ const textFontOptions = [
 
 /*
 |--------------------------------------------------------------------------
-| WEBCAM
+| RESPONSIVE BREAKPOINT HOOK
+|--------------------------------------------------------------------------
+|
+| Tracks viewport width so layout, font sizes, thumbnails, canvas size
+| and camera resolution can all react to the actual screen the booth is
+| running on (desktop, tablet, or phone) instead of fixed pixel values.
+|
 |--------------------------------------------------------------------------
 */
 
-const videoConstraints = {
-    width: 1920,
-    height: 1080,
-    facingMode: "user"
-};
+function useViewportWidth() {
+    const [width, setWidth] = useState(
+        typeof window !== "undefined" ? window.innerWidth : 1024
+    );
 
-/*
-|--------------------------------------------------------------------------
-| STYLES
-|--------------------------------------------------------------------------
-*/
+    useEffect(() => {
+        const handleResize = () => setWidth(window.innerWidth);
 
-const centerCol = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 20
-};
+        window.addEventListener("resize", handleResize);
+        window.addEventListener("orientationchange", handleResize);
 
-const topBar = {
-    width: 700,
-    height: 60,
-    position: "relative",
-    marginBottom: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-};
+        return () => {
+            window.removeEventListener("resize", handleResize);
+            window.removeEventListener(
+                "orientationchange",
+                handleResize
+            );
+        };
+    }, []);
 
-const buttonStyle = {
-    padding: "10px 20px",
-    fontSize: 20,
-    cursor: "pointer",
-    fontFamily: "CantikaCute",
-    color: "#8c5b4a",
-    border: "2px solid #8c5b4a",
-    borderRadius: 8,
-    background: "white"
-};
-
-const frameThumb = {
-    width: 180,
-    height: 240,
-    objectFit: "contain",
-    cursor: "pointer",
-    borderRadius: 12,
-    boxShadow: "0 8px 8px rgba(0,0,0,0.15)"
-};
-
-const titleBar = {
-    margin: 0,
-    lineHeight: "60px",
-    textAlign: "center",
-    width: "100%"
-};
-
-const mainContent = {
-    minHeight: 600,
-    width: 900,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start"
-};
-
-const row = {
-    display: "flex",
-    gap: 40,
-    alignItems: "flex-start"
-};
+    return width;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -224,6 +183,10 @@ export default function PhotoBooth() {
     const webcamRef = useRef(null);
     const canvasRef = useRef(null);
     const frameImgRef = useRef(null);
+
+    const viewportWidth = useViewportWidth();
+    const isMobile = viewportWidth <= 768;
+    const isSmallPhone = viewportWidth <= 380;
 
     const [selectedFrame, setSelectedFrame] = useState(null);
     const [selectedFrameConfig, setSelectedFrameConfig] = useState(null);
@@ -257,8 +220,146 @@ export default function PhotoBooth() {
     const [textBold, setTextBold] = useState(false);
     const [textItalic, setTextItalic] = useState(false);
 
-    const MAX_CANVAS_WIDTH = 500;
-    const MAX_CANVAS_HEIGHT = 650;
+    /*
+    |--------------------------------------------------------------------------
+    | RESPONSIVE STYLE VALUES
+    |--------------------------------------------------------------------------
+    |
+    | These recompute whenever viewportWidth changes, instead of being
+    | fixed constants, so the whole booth reflows on phones/tablets.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    const MAX_CANVAS_WIDTH = isSmallPhone
+        ? Math.min(viewportWidth - 32, 320)
+        : isMobile
+        ? Math.min(viewportWidth - 48, 380)
+        : 500;
+
+    const MAX_CANVAS_HEIGHT = isMobile ? 520 : 650;
+
+    const webcamColumnWidth = isSmallPhone
+        ? Math.min(viewportWidth - 32, 320)
+        : isMobile
+        ? Math.min(viewportWidth - 48, 380)
+        : 400;
+
+    const frameThumbSize = isSmallPhone
+        ? { width: 110, height: 146 }
+        : isMobile
+        ? { width: 140, height: 186 }
+        : { width: 180, height: 240 };
+
+    const stickerThumbSize = isSmallPhone ? 40 : isMobile ? 44 : 50;
+
+    const styles = useMemo(
+        () => ({
+            centerCol: {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: isMobile ? 12 : 20,
+                width: "100%",
+                boxSizing: "border-box",
+                padding: isMobile ? "0 12px" : 0
+            },
+
+            topBar: {
+                width: "100%",
+                maxWidth: 700,
+                minHeight: 60,
+                position: "relative",
+                marginBottom: isMobile ? 8 : 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                textAlign: "center"
+            },
+
+            buttonStyle: {
+                padding: isMobile ? "8px 14px" : "10px 20px",
+                fontSize: isMobile ? 16 : 20,
+                cursor: "pointer",
+                fontFamily: "CantikaCute",
+                color: "#8c5b4a",
+                border: "2px solid #8c5b4a",
+                borderRadius: 8,
+                background: "white",
+                touchAction: "manipulation"
+            },
+
+            frameThumb: {
+                ...frameThumbSize,
+                objectFit: "contain",
+                cursor: "pointer",
+                borderRadius: 12,
+                boxShadow: "0 8px 8px rgba(0,0,0,0.15)"
+            },
+
+            titleBar: {
+                margin: 0,
+                lineHeight: isMobile ? "1.3" : "60px",
+                textAlign: "center",
+                width: "100%",
+                fontSize: isSmallPhone ? "1rem" : isMobile ? "1.15rem" : "1.5rem",
+                padding: isMobile ? "10px 0" : 0
+            },
+
+            mainContent: {
+                minHeight: isMobile ? "auto" : 600,
+                width: "100%",
+                maxWidth: 900,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                boxSizing: "border-box"
+            },
+
+            row: {
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? 20 : 40,
+                alignItems: isMobile ? "center" : "flex-start",
+                width: "100%"
+            }
+        }),
+        [isMobile, isSmallPhone, frameThumbSize]
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | CAMERA CONSTRAINTS — MATCHED TO THE ACTIVE SLOT'S ASPECT RATIO
+    |--------------------------------------------------------------------------
+    |
+    | Instead of a fixed 1920x1080 request, we derive an ideal aspect ratio
+    | from the slot the next photo will land in, so the webcam frames the
+    | shot the way it'll actually be cropped into the layout — this matters
+    | a lot on phones, where the front camera is usually portrait-first.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    const activeSlot = detectedSlots[photoCount] || detectedSlots[0] || null;
+
+    const slotAspectRatio = activeSlot
+        ? activeSlot.width / activeSlot.height
+        : isMobile
+        ? 3 / 4
+        : 4 / 3;
+
+    const videoConstraints = useMemo(() => {
+        const baseWidth = isMobile ? 720 : 1280;
+        const idealHeight = Math.round(baseWidth / slotAspectRatio);
+
+        return {
+            width: { ideal: baseWidth },
+            height: { ideal: idealHeight },
+            aspectRatio: { ideal: slotAspectRatio },
+            facingMode: "user"
+        };
+    }, [isMobile, slotAspectRatio]);
 
     /*
     |--------------------------------------------------------------------------
@@ -335,10 +436,7 @@ export default function PhotoBooth() {
             for (let x = 0; x < width; x++) {
                 const index = y * width + x;
 
-                if (
-                    transparent[index] !== 1 ||
-                    visited[index] === 1
-                ) {
+                if (transparent[index] !== 1 || visited[index] === 1) {
                     continue;
                 }
 
@@ -354,49 +452,24 @@ export default function PhotoBooth() {
                 let queueIndex = 0;
 
                 while (queueIndex < queue.length) {
-                    const [currentX, currentY] =
-                        queue[queueIndex++];
+                    const [currentX, currentY] = queue[queueIndex++];
 
                     area++;
 
-                    minX = Math.min(
-                        minX,
-                        currentX
-                    );
-
-                    maxX = Math.max(
-                        maxX,
-                        currentX
-                    );
-
-                    minY = Math.min(
-                        minY,
-                        currentY
-                    );
-
-                    maxY = Math.max(
-                        maxY,
-                        currentY
-                    );
+                    minX = Math.min(minX, currentX);
+                    maxX = Math.max(maxX, currentX);
+                    minY = Math.min(minY, currentY);
+                    maxY = Math.max(maxY, currentY);
 
                     for (const [dx, dy] of directions) {
-                        const nx =
-                            currentX + dx;
+                        const nx = currentX + dx;
+                        const ny = currentY + dy;
 
-                        const ny =
-                            currentY + dy;
-
-                        if (
-                            nx < 0 ||
-                            ny < 0 ||
-                            nx >= width ||
-                            ny >= height
-                        ) {
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
                             continue;
                         }
 
-                        const nIndex =
-                            ny * width + nx;
+                        const nIndex = ny * width + nx;
 
                         if (
                             transparent[nIndex] === 1 &&
@@ -404,19 +477,13 @@ export default function PhotoBooth() {
                         ) {
                             visited[nIndex] = 1;
 
-                            queue.push([
-                                nx,
-                                ny
-                            ]);
+                            queue.push([nx, ny]);
                         }
                     }
                 }
 
-                const componentWidth =
-                    maxX - minX + 1;
-
-                const componentHeight =
-                    maxY - minY + 1;
+                const componentWidth = maxX - minX + 1;
+                const componentHeight = maxY - minY + 1;
 
                 if (
                     area > 5000 &&
@@ -434,58 +501,34 @@ export default function PhotoBooth() {
             }
         }
 
-        let candidates =
-            components.filter(
-                (component) =>
-                    component.x > 1 &&
-                    component.y > 1 &&
-                    component.x +
-                        component.width <
-                        width - 1 &&
-                    component.y +
-                        component.height <
-                        height - 1
-            );
-
-        candidates.sort(
-            (a, b) => b.area - a.area
+        let candidates = components.filter(
+            (component) =>
+                component.x > 1 &&
+                component.y > 1 &&
+                component.x + component.width < width - 1 &&
+                component.y + component.height < height - 1
         );
 
-        if (
-            candidates.length >
-            expectedCount
-        ) {
-            candidates =
-                candidates.slice(
-                    0,
-                    expectedCount
-                );
+        candidates.sort((a, b) => b.area - a.area);
+
+        if (candidates.length > expectedCount) {
+            candidates = candidates.slice(0, expectedCount);
         }
 
         candidates.sort((a, b) => {
-            const rowTolerance =
-                Math.min(
-                    a.height,
-                    b.height
-                ) * 0.4;
+            const rowTolerance = Math.min(a.height, b.height) * 0.4;
 
-            if (
-                Math.abs(
-                    a.y - b.y
-                ) > rowTolerance
-            ) {
+            if (Math.abs(a.y - b.y) > rowTolerance) {
                 return a.y - b.y;
             }
 
             return a.x - b.x;
         });
 
-        return candidates.map(
-            (slot, index) => ({
-                ...slot,
-                index
-            })
-        );
+        return candidates.map((slot, index) => ({
+            ...slot,
+            index
+        }));
     };
 
     /*
@@ -495,11 +538,7 @@ export default function PhotoBooth() {
     */
 
     const getSlotForPhoto = (photo) => {
-        return (
-            detectedSlots[
-                photo.slotIndex
-            ] || null
-        );
+        return detectedSlots[photo.slotIndex] || null;
     };
 
     /*
@@ -516,18 +555,12 @@ export default function PhotoBooth() {
             return;
         }
 
-        const ctx =
-            canvas.getContext("2d");
+        const ctx = canvas.getContext("2d");
 
         canvas.width = frame.width;
         canvas.height = frame.height;
 
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         /*
         |----------------------------------------------------------------------
@@ -536,61 +569,28 @@ export default function PhotoBooth() {
         */
 
         photos.forEach((photo) => {
-            const slot =
-                detectedSlots[
-                    photo.slotIndex
-                ] || null;
+            const slot = detectedSlots[photo.slotIndex] || null;
 
             if (!slot) {
                 return;
             }
 
-            const drawWidth =
-                photo.img.width *
-                photo.scale;
+            const drawWidth = photo.img.width * photo.scale;
+            const drawHeight = photo.img.height * photo.scale;
 
-            const drawHeight =
-                photo.img.height *
-                photo.scale;
+            const centerX = slot.x + slot.width / 2;
+            const centerY = slot.y + slot.height / 2;
 
-            const centerX =
-                slot.x +
-                slot.width / 2;
-
-            const centerY =
-                slot.y +
-                slot.height / 2;
-
-            const photoX =
-                centerX -
-                drawWidth / 2 +
-                photo.offsetX;
-
-            const photoY =
-                centerY -
-                drawHeight / 2 +
-                photo.offsetY;
+            const photoX = centerX - drawWidth / 2 + photo.offsetX;
+            const photoY = centerY - drawHeight / 2 + photo.offsetY;
 
             ctx.save();
 
             ctx.beginPath();
-
-            ctx.rect(
-                slot.x,
-                slot.y,
-                slot.width,
-                slot.height
-            );
-
+            ctx.rect(slot.x, slot.y, slot.width, slot.height);
             ctx.clip();
 
-            ctx.drawImage(
-                photo.img,
-                photoX,
-                photoY,
-                drawWidth,
-                drawHeight
-            );
+            ctx.drawImage(photo.img, photoX, photoY, drawWidth, drawHeight);
 
             ctx.restore();
         });
@@ -601,13 +601,7 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        ctx.drawImage(
-            frame,
-            0,
-            0,
-            frame.width,
-            frame.height
-        );
+        ctx.drawImage(frame, 0, 0, frame.width, frame.height);
 
         /*
         |----------------------------------------------------------------------
@@ -615,38 +609,31 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        stickers.forEach(
-            (sticker, index) => {
-                if (!sticker.img) {
-                    return;
-                }
+        stickers.forEach((sticker, index) => {
+            if (!sticker.img) {
+                return;
+            }
 
-                ctx.drawImage(
-                    sticker.img,
+            ctx.drawImage(
+                sticker.img,
+                sticker.x,
+                sticker.y,
+                sticker.width,
+                sticker.height
+            );
+
+            if (index === selectedSticker) {
+                ctx.strokeStyle = "#ff7aa2";
+                ctx.lineWidth = 4;
+
+                ctx.strokeRect(
                     sticker.x,
                     sticker.y,
                     sticker.width,
                     sticker.height
                 );
-
-                if (
-                    index ===
-                    selectedSticker
-                ) {
-                    ctx.strokeStyle =
-                        "#ff7aa2";
-
-                    ctx.lineWidth = 4;
-
-                    ctx.strokeRect(
-                        sticker.x,
-                        sticker.y,
-                        sticker.width,
-                        sticker.height
-                    );
-                }
             }
-        );
+        });
 
         /*
         |----------------------------------------------------------------------
@@ -654,139 +641,91 @@ export default function PhotoBooth() {
         |----------------------------------------------------------------------
         */
 
-        textItems.forEach(
-            (textItem, index) => {
-                if (!textItem.text) {
-                    return;
-                }
-
-                const weight =
-                    textItem.bold
-                        ? "bold"
-                        : "normal";
-
-                const style =
-                    textItem.italic
-                        ? "italic"
-                        : "normal";
-
-                ctx.save();
-
-                ctx.font =
-                    `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
-
-                ctx.fillStyle =
-                    textItem.color;
-
-                ctx.textBaseline =
-                    "top";
-
-                ctx.fillText(
-                    textItem.text,
-                    textItem.x,
-                    textItem.y
-                );
-
-                if (
-                    index ===
-                    selectedText
-                ) {
-                    const metrics =
-                        ctx.measureText(
-                            textItem.text
-                        );
-
-                    const textWidth =
-                        metrics.width;
-
-                    const textHeight =
-                        textItem.size;
-
-                    ctx.strokeStyle =
-                        "#ff7aa2";
-
-                    ctx.lineWidth = 3;
-
-                    ctx.strokeRect(
-                        textItem.x - 6,
-                        textItem.y - 6,
-                        textWidth + 12,
-                        textHeight + 12
-                    );
-                }
-
-                ctx.restore();
+        textItems.forEach((textItem, index) => {
+            if (!textItem.text) {
+                return;
             }
-        );
-    }, [
-        photos,
-        stickers,
-        textItems,
-        selectedSticker,
-        selectedText,
-        detectedSlots
-    ]);
 
-/*
-|--------------------------------------------------------------------------
-| LOAD FRAME
-|--------------------------------------------------------------------------
-*/
+            const weight = textItem.bold ? "bold" : "normal";
+            const style = textItem.italic ? "italic" : "normal";
 
-useEffect(() => {
-    if (!selectedFrameConfig) {
-        return;
-    }
+            ctx.save();
 
-    const img = new Image();
-    img.src = selectedFrameConfig.src;
+            ctx.font = `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
+            ctx.fillStyle = textItem.color;
+            ctx.textBaseline = "top";
 
-    img.onload = () => {
-        frameImgRef.current = img;
+            ctx.fillText(textItem.text, textItem.x, textItem.y);
 
-        const slots = detectTransparentSlots(
-            img,
-            selectedFrameConfig.slotCount
-        );
+            if (index === selectedText) {
+                const metrics = ctx.measureText(textItem.text);
+                const textWidth = metrics.width;
+                const textHeight = textItem.size;
 
-        setDetectedSlots(slots);
+                ctx.strokeStyle = "#ff7aa2";
+                ctx.lineWidth = 3;
 
-        setTimeout(() => {
-            drawCanvas();
-        }, 0);
-    };
+                ctx.strokeRect(
+                    textItem.x - 6,
+                    textItem.y - 6,
+                    textWidth + 12,
+                    textHeight + 12
+                );
+            }
 
-    img.onerror = () => {
-        console.error(
-            "Could not load frame:",
-            selectedFrameConfig.src
-        );
-    };
-    // drawCanvas intentionally omitted because this effect
-    // should only run when the selected frame changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [selectedFrameConfig]);
+            ctx.restore();
+        });
+    }, [photos, stickers, textItems, selectedSticker, selectedText, detectedSlots]);
 
+    /*
+    |--------------------------------------------------------------------------
+    | LOAD FRAME
+    |--------------------------------------------------------------------------
+    */
 
-/*
-|--------------------------------------------------------------------------
-| REDRAW
-|--------------------------------------------------------------------------
-*/
+    useEffect(() => {
+        if (!selectedFrameConfig) {
+            return;
+        }
 
-useEffect(() => {
-    drawCanvas();
-    // drawCanvas intentionally omitted because its body is recreated
-    // on render and the state dependencies below control when redraws occur.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-    photos,
-    stickers,
-    textItems,
-    selectedSticker,
-    selectedText,
-    detectedSlots
-]);
+        const img = new Image();
+        img.src = selectedFrameConfig.src;
+
+        img.onload = () => {
+            frameImgRef.current = img;
+
+            const slots = detectTransparentSlots(
+                img,
+                selectedFrameConfig.slotCount
+            );
+
+            setDetectedSlots(slots);
+
+            setTimeout(() => {
+                drawCanvas();
+            }, 0);
+        };
+
+        img.onerror = () => {
+            console.error("Could not load frame:", selectedFrameConfig.src);
+        };
+        // drawCanvas intentionally omitted because this effect
+        // should only run when the selected frame changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedFrameConfig]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | REDRAW
+    |--------------------------------------------------------------------------
+    */
+
+    useEffect(() => {
+        drawCanvas();
+        // drawCanvas intentionally omitted because its body is recreated
+        // on render and the state dependencies below control when redraws occur.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [photos, stickers, textItems, selectedSticker, selectedText, detectedSlots]);
 
     /*
     |--------------------------------------------------------------------------
@@ -795,80 +734,39 @@ useEffect(() => {
     */
 
     useEffect(() => {
-        const handleKeyDown = (
-            event
-        ) => {
+        const handleKeyDown = (event) => {
             if (
-                (
-                    event.key ===
-                        "Delete" ||
-                    event.key ===
-                        "Backspace"
-                ) &&
+                (event.key === "Delete" || event.key === "Backspace") &&
                 mode === "decorate"
             ) {
-                if (
-                    selectedText !==
-                    null
-                ) {
-                    setTextItems(
-                        (previous) =>
-                            previous.filter(
-                                (
-                                    _,
-                                    index
-                                ) =>
-                                    index !==
-                                    selectedText
-                            )
+                if (selectedText !== null) {
+                    setTextItems((previous) =>
+                        previous.filter((_, index) => index !== selectedText)
                     );
 
-                    setSelectedText(
-                        null
-                    );
+                    setSelectedText(null);
 
                     return;
                 }
 
-                if (
-                    selectedSticker !==
-                    null
-                ) {
-                    setStickers(
-                        (previous) =>
-                            previous.filter(
-                                (
-                                    _,
-                                    index
-                                ) =>
-                                    index !==
-                                    selectedSticker
-                            )
+                if (selectedSticker !== null) {
+                    setStickers((previous) =>
+                        previous.filter(
+                            (_, index) => index !== selectedSticker
+                        )
                     );
 
-                    setSelectedSticker(
-                        null
-                    );
+                    setSelectedSticker(null);
                 }
             }
         };
 
-        window.addEventListener(
-            "keydown",
-            handleKeyDown
-        );
+        window.addEventListener("keydown", handleKeyDown);
 
         return () => {
-            window.removeEventListener(
-                "keydown",
-                handleKeyDown
-            );
+            window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [
-        selectedSticker,
-        selectedText,
-        mode
-    ]);
+    }, [selectedSticker, selectedText, mode]);
 
     /*
     |--------------------------------------------------------------------------
@@ -877,9 +775,7 @@ useEffect(() => {
     */
 
     const handleBack = () => {
-        if (
-            mode === "decorate"
-        ) {
+        if (mode === "decorate") {
             setMode("photo");
             setCanTakePhoto(false);
             setStickers([]);
@@ -914,91 +810,53 @@ useEffect(() => {
             return;
         }
 
-        const totalSlots =
-            selectedFrameConfig.slotCount;
+        const totalSlots = selectedFrameConfig.slotCount;
 
-        if (
-            photoCount >=
-            totalSlots
-        ) {
+        if (photoCount >= totalSlots) {
             return;
         }
 
-        const slot =
-            detectedSlots[
-                photoCount
-            ];
+        const slot = detectedSlots[photoCount];
 
         if (!slot) {
-            console.error(
-                "Slot was not detected:",
-                photoCount
-            );
+            console.error("Slot was not detected:", photoCount);
 
             return;
         }
 
-        const scaleX =
-            slot.width /
-            img.width;
+        const scaleX = slot.width / img.width;
+        const scaleY = slot.height / img.height;
 
-        const scaleY =
-            slot.height /
-            img.height;
+        const scale = Math.max(scaleX, scaleY);
 
-        const scale =
-            Math.max(
-                scaleX,
-                scaleY
-            );
+        const drawWidth = img.width * scale;
+        const drawHeight = img.height * scale;
 
-        const drawWidth =
-            img.width * scale;
-
-        const drawHeight =
-            img.height * scale;
-
-        setPhotos(
-            (previous) => [
-                ...previous,
-                {
-                    img,
-                    slotIndex:
-                        photoCount,
-                    scale,
-                    offsetX: 0,
-                    offsetY: 0,
-                    drawWidth,
-                    drawHeight
-                }
-            ]
-        );
-
-        setPhotoCount(
-            (current) => {
-                const next =
-                    current + 1;
-
-                if (
-                    next >=
-                    totalSlots
-                ) {
-                    setMode(
-                        "decorate"
-                    );
-
-                    setCanTakePhoto(
-                        false
-                    );
-                } else {
-                    setCanTakePhoto(
-                        true
-                    );
-                }
-
-                return next;
+        setPhotos((previous) => [
+            ...previous,
+            {
+                img,
+                slotIndex: photoCount,
+                scale,
+                offsetX: 0,
+                offsetY: 0,
+                drawWidth,
+                drawHeight
             }
-        );
+        ]);
+
+        setPhotoCount((current) => {
+            const next = current + 1;
+
+            if (next >= totalSlots) {
+                setMode("decorate");
+                setCanTakePhoto(false);
+            } else {
+                setCanTakePhoto(true);
+            }
+
+            return next;
+        });
     };
 
     /*
@@ -1008,14 +866,11 @@ useEffect(() => {
     */
 
     const takePhotoNow = () => {
-        if (
-            !webcamRef.current
-        ) {
+        if (!webcamRef.current) {
             return;
         }
 
-        const src =
-            webcamRef.current.getScreenshot();
+        const src = webcamRef.current.getScreenshot();
 
         if (!src) {
             return;
@@ -1037,17 +892,13 @@ useEffect(() => {
     */
 
     const capturePhoto = () => {
-        if (
-            !canTakePhoto ||
-            countdown !== null
-        ) {
+        if (!canTakePhoto || countdown !== null) {
             return;
         }
 
         if (
             !selectedFrameConfig ||
-            photoCount >=
-                selectedFrameConfig.slotCount
+            photoCount >= selectedFrameConfig.slotCount
         ) {
             return;
         }
@@ -1057,28 +908,19 @@ useEffect(() => {
 
         let current = 3;
 
-        const interval =
-            setInterval(() => {
-                current--;
+        const interval = setInterval(() => {
+            current--;
 
-                if (
-                    current === 0
-                ) {
-                    clearInterval(
-                        interval
-                    );
+            if (current === 0) {
+                clearInterval(interval);
 
-                    setCountdown(
-                        null
-                    );
+                setCountdown(null);
 
-                    takePhotoNow();
-                } else {
-                    setCountdown(
-                        current
-                    );
-                }
-            }, 1000);
+                takePhotoNow();
+            } else {
+                setCountdown(current);
+            }
+        }, 1000);
     };
 
     /*
@@ -1087,25 +929,19 @@ useEffect(() => {
     |--------------------------------------------------------------------------
     */
 
-    const uploadPhoto = (
-        event
-    ) => {
-        const file =
-            event.target.files[0];
+    const uploadPhoto = (event) => {
+        const file = event.target.files[0];
 
         if (!file) {
             return;
         }
 
-        const reader =
-            new FileReader();
+        const reader = new FileReader();
 
         reader.onload = () => {
-            const img =
-                new Image();
+            const img = new Image();
 
-            img.src =
-                reader.result;
+            img.src = reader.result;
 
             img.onload = () => {
                 addPhoto(img);
@@ -1128,21 +964,9 @@ useEffect(() => {
             return;
         }
 
-        setPhotos(
-            (previous) =>
-                previous.slice(
-                    0,
-                    -1
-                )
-        );
+        setPhotos((previous) => previous.slice(0, -1));
 
-        setPhotoCount(
-            (current) =>
-                Math.max(
-                    0,
-                    current - 1
-                )
-        );
+        setPhotoCount((current) => Math.max(0, current - 1));
 
         setCanTakePhoto(true);
         setMode("photo");
@@ -1152,60 +976,53 @@ useEffect(() => {
 
     /*
     |--------------------------------------------------------------------------
-    | CANVAS COORDINATES
+    | POINTER COORDINATES (shared by mouse + touch)
+    |--------------------------------------------------------------------------
+    |
+    | getCoords now takes a plain {clientX, clientY} pair instead of an
+    | event, so the same math drives both mouse and touch interactions.
+    |
     |--------------------------------------------------------------------------
     */
 
-    const getCoords = (
-        event
-    ) => {
-        const canvas =
-            canvasRef.current;
+    const getCoords = (clientX, clientY) => {
+        const canvas = canvasRef.current;
 
         if (!canvas) {
-            return {
-                x: 0,
-                y: 0
-            };
+            return { x: 0, y: 0 };
         }
 
-        const rect =
-            canvas.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
 
         return {
-            x:
-                (
-                    event.clientX -
-                    rect.left
-                ) *
-                (
-                    canvas.width /
-                    rect.width
-                ),
-
-            y:
-                (
-                    event.clientY -
-                    rect.top
-                ) *
-                (
-                    canvas.height /
-                    rect.height
-                )
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
         };
+    };
+
+    const pointFromMouseEvent = (event) => ({
+        clientX: event.clientX,
+        clientY: event.clientY
+    });
+
+    const pointFromTouchEvent = (event) => {
+        const touch = event.touches[0] || event.changedTouches[0];
+
+        if (!touch) {
+            return null;
+        }
+
+        return { clientX: touch.clientX, clientY: touch.clientY };
     };
 
     /*
     |--------------------------------------------------------------------------
-    | MOUSE DOWN
+    | POINTER DOWN (shared logic for mouse + touch)
     |--------------------------------------------------------------------------
     */
 
-    const handleMouseDown = (
-        event
-    ) => {
-        const { x, y } =
-            getCoords(event);
+    const handlePointerDown = (clientX, clientY) => {
+        const { x, y } = getCoords(clientX, clientY);
 
         /*
         |----------------------------------------------------------------------
@@ -1213,74 +1030,35 @@ useEffect(() => {
         |----------------------------------------------------------------------
         */
 
-        if (
-            mode === "photo"
-        ) {
-            for (
-                let i =
-                    photos.length - 1;
-                i >= 0;
-                i--
-            ) {
-                const photo =
-                    photos[i];
-
-                const slot =
-                    getSlotForPhoto(
-                        photo
-                    );
+        if (mode === "photo") {
+            for (let i = photos.length - 1; i >= 0; i--) {
+                const photo = photos[i];
+                const slot = getSlotForPhoto(photo);
 
                 if (!slot) {
                     continue;
                 }
 
-                const drawWidth =
-                    photo.img.width *
-                    photo.scale;
-
-                const drawHeight =
-                    photo.img.height *
-                    photo.scale;
+                const drawWidth = photo.img.width * photo.scale;
+                const drawHeight = photo.img.height * photo.scale;
 
                 const photoX =
-                    slot.x +
-                    (
-                        slot.width -
-                        drawWidth
-                    ) /
-                        2 +
-                    photo.offsetX;
+                    slot.x + (slot.width - drawWidth) / 2 + photo.offsetX;
 
                 const photoY =
-                    slot.y +
-                    (
-                        slot.height -
-                        drawHeight
-                    ) /
-                        2 +
-                    photo.offsetY;
+                    slot.y + (slot.height - drawHeight) / 2 + photo.offsetY;
 
                 if (
                     x >= photoX &&
-                    x <=
-                        photoX +
-                        drawWidth &&
+                    x <= photoX + drawWidth &&
                     y >= photoY &&
-                    y <=
-                        photoY +
-                        drawHeight
+                    y <= photoY + drawHeight
                 ) {
-                    setDraggingPhotoIndex(
-                        i
-                    );
+                    setDraggingPhotoIndex(i);
 
                     setDragOffset({
-                        x:
-                            x -
-                            photoX,
-                        y:
-                            y -
-                            photoY
+                        x: x - photoX,
+                        y: y - photoY
                     });
 
                     return;
@@ -1294,90 +1072,43 @@ useEffect(() => {
         |----------------------------------------------------------------------
         */
 
-        if (
-            mode ===
-            "decorate"
-        ) {
+        if (mode === "decorate") {
             /*
             |------------------------------------------------------------------
             | CHECK TEXT FIRST
             |------------------------------------------------------------------
             */
 
-            for (
-                let i =
-                    textItems.length - 1;
-                i >= 0;
-                i--
-            ) {
-                const textItem =
-                    textItems[i];
+            for (let i = textItems.length - 1; i >= 0; i--) {
+                const textItem = textItems[i];
 
-                if (
-                    !textItem.text
-                ) {
+                if (!textItem.text) {
                     continue;
                 }
 
-                const weight =
-                    textItem.bold
-                        ? "bold"
-                        : "normal";
+                const weight = textItem.bold ? "bold" : "normal";
+                const style = textItem.italic ? "italic" : "normal";
 
-                const style =
-                    textItem.italic
-                        ? "italic"
-                        : "normal";
+                const ctx = canvasRef.current.getContext("2d");
 
-                const ctx =
-                    canvasRef.current.getContext(
-                        "2d"
-                    );
+                ctx.font = `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
 
-                ctx.font =
-                    `${style} ${weight} ${textItem.size}px "${textItem.font}"`;
-
-                const textWidth =
-                    ctx.measureText(
-                        textItem.text
-                    ).width;
-
-                const textHeight =
-                    textItem.size;
+                const textWidth = ctx.measureText(textItem.text).width;
+                const textHeight = textItem.size;
 
                 if (
-                    x >=
-                        textItem.x -
-                        10 &&
-                    x <=
-                        textItem.x +
-                        textWidth +
-                        10 &&
-                    y >=
-                        textItem.y -
-                        10 &&
-                    y <=
-                        textItem.y +
-                        textHeight +
-                        10
+                    x >= textItem.x - 10 &&
+                    x <= textItem.x + textWidth + 10 &&
+                    y >= textItem.y - 10 &&
+                    y <= textItem.y + textHeight + 10
                 ) {
                     setDraggingText(i);
-
-                    setSelectedText(
-                        i
-                    );
-
-                    setSelectedSticker(
-                        null
-                    );
+                    setSelectedText(i);
+                    setSelectedSticker(null);
 
                     setDragOffset({
-                        x:
-                            x -
-                            textItem.x,
-                        y:
-                            y -
-                            textItem.y
+                        x: x - textItem.x,
+                        y: y - textItem.y
                     });
 
                     return;
@@ -1390,46 +1121,22 @@ useEffect(() => {
             |------------------------------------------------------------------
             */
 
-            for (
-                let i =
-                    stickers.length - 1;
-                i >= 0;
-                i--
-            ) {
-                const sticker =
-                    stickers[i];
+            for (let i = stickers.length - 1; i >= 0; i--) {
+                const sticker = stickers[i];
 
                 if (
-                    x >=
-                        sticker.x &&
-                    x <=
-                        sticker.x +
-                        sticker.width &&
-                    y >=
-                        sticker.y &&
-                    y <=
-                        sticker.y +
-                        sticker.height
+                    x >= sticker.x &&
+                    x <= sticker.x + sticker.width &&
+                    y >= sticker.y &&
+                    y <= sticker.y + sticker.height
                 ) {
-                    setDraggingSticker(
-                        i
-                    );
-
-                    setSelectedSticker(
-                        i
-                    );
-
-                    setSelectedText(
-                        null
-                    );
+                    setDraggingSticker(i);
+                    setSelectedSticker(i);
+                    setSelectedText(null);
 
                     setDragOffset({
-                        x:
-                            x -
-                            sticker.x,
-                        y:
-                            y -
-                            sticker.y
+                        x: x - sticker.x,
+                        y: y - sticker.y
                     });
 
                     return;
@@ -1443,15 +1150,12 @@ useEffect(() => {
 
     /*
     |--------------------------------------------------------------------------
-    | MOUSE MOVE
+    | POINTER MOVE (shared logic for mouse + touch)
     |--------------------------------------------------------------------------
     */
 
-    const handleMouseMove = (
-        event
-    ) => {
-        const { x, y } =
-            getCoords(event);
+    const handlePointerMove = (clientX, clientY) => {
+        const { x, y } = getCoords(clientX, clientY);
 
         /*
         |----------------------------------------------------------------------
@@ -1459,116 +1163,58 @@ useEffect(() => {
         |----------------------------------------------------------------------
         */
 
-        if (
-            draggingPhotoIndex !==
-                null &&
-            mode === "photo"
-        ) {
-            setPhotos(
-                (previous) => {
-                    const updated = [
-                        ...previous
-                    ];
+        if (draggingPhotoIndex !== null && mode === "photo") {
+            setPhotos((previous) => {
+                const updated = [...previous];
+                const photo = updated[draggingPhotoIndex];
 
-                    const photo =
-                        updated[
-                            draggingPhotoIndex
-                        ];
-
-                    if (!photo) {
-                        return updated;
-                    }
-
-                    const slot =
-                        getSlotForPhoto(
-                            photo
-                        );
-
-                    if (!slot) {
-                        return updated;
-                    }
-
-                    const drawWidth =
-                        photo.img.width *
-                        photo.scale;
-
-                    const drawHeight =
-                        photo.img.height *
-                        photo.scale;
-
-                    const centerX =
-                        slot.x +
-                        slot.width /
-                            2;
-
-                    const centerY =
-                        slot.y +
-                        slot.height /
-                            2;
-
-                    let newOffsetX =
-                        x -
-                        dragOffset.x -
-                        (
-                            centerX -
-                            drawWidth / 2
-                        );
-
-                    let newOffsetY =
-                        y -
-                        dragOffset.y -
-                        (
-                            centerY -
-                            drawHeight / 2
-                        );
-
-                    const maxOffsetX =
-                        Math.max(
-                            0,
-                            (
-                                drawWidth -
-                                slot.width
-                            ) /
-                                2
-                        );
-
-                    const maxOffsetY =
-                        Math.max(
-                            0,
-                            (
-                                drawHeight -
-                                slot.height
-                            ) /
-                                2
-                        );
-
-                    newOffsetX =
-                        Math.max(
-                            -maxOffsetX,
-                            Math.min(
-                                maxOffsetX,
-                                newOffsetX
-                            )
-                        );
-
-                    newOffsetY =
-                        Math.max(
-                            -maxOffsetY,
-                            Math.min(
-                                maxOffsetY,
-                                newOffsetY
-                            )
-                        );
-
-                    photo.offsetX =
-                        newOffsetX;
-
-                    photo.offsetY =
-                        newOffsetY;
-
+                if (!photo) {
                     return updated;
                 }
-            );
+
+                const slot = getSlotForPhoto(photo);
+
+                if (!slot) {
+                    return updated;
+                }
+
+                const drawWidth = photo.img.width * photo.scale;
+                const drawHeight = photo.img.height * photo.scale;
+
+                const centerX = slot.x + slot.width / 2;
+                const centerY = slot.y + slot.height / 2;
+
+                let newOffsetX =
+                    x - dragOffset.x - (centerX - drawWidth / 2);
+
+                let newOffsetY =
+                    y - dragOffset.y - (centerY - drawHeight / 2);
+
+                const maxOffsetX = Math.max(
+                    0,
+                    (drawWidth - slot.width) / 2
+                );
+
+                const maxOffsetY = Math.max(
+                    0,
+                    (drawHeight - slot.height) / 2
+                );
+
+                newOffsetX = Math.max(
+                    -maxOffsetX,
+                    Math.min(maxOffsetX, newOffsetX)
+                );
+
+                newOffsetY = Math.max(
+                    -maxOffsetY,
+                    Math.min(maxOffsetY, newOffsetY)
+                );
+
+                photo.offsetX = newOffsetX;
+                photo.offsetY = newOffsetY;
+
+                return updated;
+            });
         }
 
         /*
@@ -1577,42 +1223,22 @@ useEffect(() => {
         |----------------------------------------------------------------------
         */
 
-        if (
-            draggingSticker !==
-                null &&
-            mode === "decorate"
-        ) {
-            setStickers(
-                (previous) => {
-                    const updated = [
-                        ...previous
-                    ];
+        if (draggingSticker !== null && mode === "decorate") {
+            setStickers((previous) => {
+                const updated = [...previous];
 
-                    if (
-                        !updated[
-                            draggingSticker
-                        ]
-                    ) {
-                        return updated;
-                    }
-
-                    updated[
-                        draggingSticker
-                    ] = {
-                        ...updated[
-                            draggingSticker
-                        ],
-                        x:
-                            x -
-                            dragOffset.x,
-                        y:
-                            y -
-                            dragOffset.y
-                    };
-
+                if (!updated[draggingSticker]) {
                     return updated;
                 }
-            );
+
+                updated[draggingSticker] = {
+                    ...updated[draggingSticker],
+                    x: x - dragOffset.x,
+                    y: y - dragOffset.y
+                };
+
+                return updated;
+            });
         }
 
         /*
@@ -1621,55 +1247,98 @@ useEffect(() => {
         |----------------------------------------------------------------------
         */
 
-        if (
-            draggingText !==
-                null &&
-            mode === "decorate"
-        ) {
-            setTextItems(
-                (previous) => {
-                    const updated = [
-                        ...previous
-                    ];
+        if (draggingText !== null && mode === "decorate") {
+            setTextItems((previous) => {
+                const updated = [...previous];
 
-                    if (
-                        !updated[
-                            draggingText
-                        ]
-                    ) {
-                        return updated;
-                    }
-
-                    updated[
-                        draggingText
-                    ] = {
-                        ...updated[
-                            draggingText
-                        ],
-                        x:
-                            x -
-                            dragOffset.x,
-                        y:
-                            y -
-                            dragOffset.y
-                    };
-
+                if (!updated[draggingText]) {
                     return updated;
                 }
-            );
+
+                updated[draggingText] = {
+                    ...updated[draggingText],
+                    x: x - dragOffset.x,
+                    y: y - dragOffset.y
+                };
+
+                return updated;
+            });
         }
+    };
+
+    const handlePointerUp = () => {
+        setDraggingPhotoIndex(null);
+        setDraggingSticker(null);
+        setDraggingText(null);
     };
 
     /*
     |--------------------------------------------------------------------------
-    | MOUSE UP
+    | MOUSE EVENT WRAPPERS
     |--------------------------------------------------------------------------
     */
 
+    const handleMouseDown = (event) => {
+        const point = pointFromMouseEvent(event);
+        handlePointerDown(point.clientX, point.clientY);
+    };
+
+    const handleMouseMove = (event) => {
+        const point = pointFromMouseEvent(event);
+        handlePointerMove(point.clientX, point.clientY);
+    };
+
     const handleMouseUp = () => {
-        setDraggingPhotoIndex(null);
-        setDraggingSticker(null);
-        setDraggingText(null);
+        handlePointerUp();
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOUCH EVENT WRAPPERS (phones/tablets)
+    |--------------------------------------------------------------------------
+    |
+    | We call preventDefault only when we're actually acting on a drag, so
+    | ordinary taps and page scroll elsewhere are left alone. touchAction:
+    | "none" on the canvas element (see render) stops the browser from
+    | trying to scroll/zoom while a drag is in progress.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    const handleTouchStart = (event) => {
+        const point = pointFromTouchEvent(event);
+
+        if (!point) {
+            return;
+        }
+
+        handlePointerDown(point.clientX, point.clientY);
+    };
+
+    const handleTouchMove = (event) => {
+        if (
+            draggingPhotoIndex === null &&
+            draggingSticker === null &&
+            draggingText === null
+        ) {
+            return;
+        }
+
+        const point = pointFromTouchEvent(event);
+
+        if (!point) {
+            return;
+        }
+
+        if (event.cancelable) {
+            event.preventDefault();
+        }
+
+        handlePointerMove(point.clientX, point.clientY);
+    };
+
+    const handleTouchEnd = () => {
+        handlePointerUp();
     };
 
     /*
@@ -1678,31 +1347,24 @@ useEffect(() => {
     |--------------------------------------------------------------------------
     */
 
-    const addSticker = (
-        src
-    ) => {
+    const addSticker = (src) => {
         const img = new Image();
 
         img.src = src;
 
         img.onload = () => {
-            setStickers(
-                (previous) => [
-                    ...previous,
-                    {
-                        img,
-                        x: 400,
-                        y: 100,
-                        width: 150,
-                        height: 150
-                    }
-                ]
-            );
+            setStickers((previous) => [
+                ...previous,
+                {
+                    img,
+                    x: 400,
+                    y: 100,
+                    width: 150,
+                    height: 150
+                }
+            ]);
 
-            setSelectedSticker(
-                stickers.length
-            );
-
+            setSelectedSticker(stickers.length);
             setSelectedText(null);
         };
     };
@@ -1714,8 +1376,7 @@ useEffect(() => {
     */
 
     const addText = () => {
-        const finalText =
-            newText.trim();
+        const finalText = newText.trim();
 
         if (!finalText) {
             return;
@@ -1725,29 +1386,20 @@ useEffect(() => {
             text: finalText,
             x: 150,
             y: 100,
-            size: Number(
-                textSize
-            ),
+            size: Number(textSize),
             color: textColor,
             font: textFont,
             bold: textBold,
             italic: textItalic
         };
 
-        setTextItems(
-            (previous) => {
-                const updated = [
-                    ...previous,
-                    newItem
-                ];
+        setTextItems((previous) => {
+            const updated = [...previous, newItem];
 
-                setSelectedText(
-                    updated.length - 1
-                );
+            setSelectedText(updated.length - 1);
 
-                return updated;
-            }
-        );
+            return updated;
+        });
 
         setSelectedSticker(null);
         setNewText("");
@@ -1759,44 +1411,25 @@ useEffect(() => {
     |--------------------------------------------------------------------------
     */
 
-    const updateSelectedText = (
-        property,
-        value
-    ) => {
-        if (
-            selectedText ===
-            null
-        ) {
+    const updateSelectedText = (property, value) => {
+        if (selectedText === null) {
             return;
         }
 
-        setTextItems(
-            (previous) => {
-                const updated = [
-                    ...previous
-                ];
+        setTextItems((previous) => {
+            const updated = [...previous];
 
-                if (
-                    !updated[
-                        selectedText
-                    ]
-                ) {
-                    return updated;
-                }
-
-                updated[
-                    selectedText
-                ] = {
-                    ...updated[
-                        selectedText
-                    ],
-                    [property]:
-                        value
-                };
-
+            if (!updated[selectedText]) {
                 return updated;
             }
-        );
+
+            updated[selectedText] = {
+                ...updated[selectedText],
+                [property]: value
+            };
+
+            return updated;
+        });
     };
 
     /*
@@ -1806,17 +1439,12 @@ useEffect(() => {
     */
 
     const downloadPhoto = () => {
-        if (
-            !canvasRef.current
-        ) {
+        if (!canvasRef.current) {
             return;
         }
 
-        const previousSticker =
-            selectedSticker;
-
-        const previousText =
-            selectedText;
+        const previousSticker = selectedSticker;
+        const previousText = selectedText;
 
         setSelectedSticker(null);
         setSelectedText(null);
@@ -1824,28 +1452,14 @@ useEffect(() => {
         setTimeout(() => {
             drawCanvas();
 
-            const link =
-                document.createElement(
-                    "a"
-                );
+            const link = document.createElement("a");
 
-            link.href =
-                canvasRef.current.toDataURL(
-                    "image/png"
-                );
-
-            link.download =
-                "photo-strip.png";
-
+            link.href = canvasRef.current.toDataURL("image/png");
+            link.download = "photo-strip.png";
             link.click();
 
-            setSelectedSticker(
-                previousSticker
-            );
-
-            setSelectedText(
-                previousText
-            );
+            setSelectedSticker(previousSticker);
+            setSelectedText(previousText);
         }, 50);
     };
 
@@ -1856,50 +1470,29 @@ useEffect(() => {
     */
 
     const getCanvasStyle = () => {
-        if (
-            !frameImgRef.current
-        ) {
+        if (!frameImgRef.current) {
             return {
-                width: 200,
-                height: 500
+                width: isMobile ? webcamColumnWidth : 200,
+                height: isMobile ? webcamColumnWidth * 1.25 : 500
             };
         }
 
-        const width =
-            frameImgRef.current
-                .width;
+        const width = frameImgRef.current.width;
+        const height = frameImgRef.current.height;
 
-        const height =
-            frameImgRef.current
-                .height;
+        const ratio = width / height;
 
-        const ratio =
-            width / height;
+        let displayWidth = MAX_CANVAS_WIDTH;
+        let displayHeight = displayWidth / ratio;
 
-        let displayWidth =
-            MAX_CANVAS_WIDTH;
-
-        let displayHeight =
-            displayWidth /
-            ratio;
-
-        if (
-            displayHeight >
-            MAX_CANVAS_HEIGHT
-        ) {
-            displayHeight =
-                MAX_CANVAS_HEIGHT;
-
-            displayWidth =
-                displayHeight *
-                ratio;
+        if (displayHeight > MAX_CANVAS_HEIGHT) {
+            displayHeight = MAX_CANVAS_HEIGHT;
+            displayWidth = displayHeight * ratio;
         }
 
         return {
-            width:
-                displayWidth,
-            height:
-                displayHeight
+            width: displayWidth,
+            height: displayHeight
         };
     };
 
@@ -1910,11 +1503,7 @@ useEffect(() => {
     */
 
     const selectedTextItem =
-        selectedText !== null
-            ? textItems[
-                  selectedText
-              ]
-            : null;
+        selectedText !== null ? textItems[selectedText] : null;
 
     /*
     |--------------------------------------------------------------------------
@@ -1923,47 +1512,35 @@ useEffect(() => {
     */
 
     return (
-        <div style={centerCol}>
+        <div style={styles.centerCol}>
             {/* TOP BAR */}
 
-            <div style={topBar}>
+            <div style={styles.topBar}>
                 {selectedFrame && (
                     <button
                         style={{
-                            ...buttonStyle,
-                            position:
-                                "absolute",
+                            ...styles.buttonStyle,
+                            position: isMobile ? "static" : "absolute",
                             left: 0,
                             top: 10,
                             height: 40,
-                            padding:
-                                "0 16px",
-                            lineHeight:
-                                "40px",
-                            display:
-                                "flex",
-                            alignItems:
-                                "center",
-                            justifyContent:
-                                "center"
+                            padding: "0 16px",
+                            lineHeight: "40px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: isMobile ? 8 : 0
                         }}
-                        onClick={
-                            handleBack
-                        }
+                        onClick={handleBack}
                     >
                         ← Back
                     </button>
                 )}
 
-                <h1
-                    style={
-                        titleBar
-                    }
-                >
+                <h1 style={styles.titleBar}>
                     {!selectedFrame
                         ? "₊✩‧₊˚ Select a frame౨ৎ ˚₊✩‧₊"
-                        : mode ===
-                          "photo"
+                        : mode === "photo"
                         ? "⋆｡‧˚ʚ Smile :)ɞ˚‧｡⋆"
                         : ". ݁₊ ⊹ . ݁Let’s decorate . ⊹ ₊ ݁."}
                 </h1>
@@ -1971,180 +1548,119 @@ useEffect(() => {
 
             {/* MAIN CONTENT */}
 
-            <div
-                style={
-                    mainContent
-                }
-            >
+            <div style={styles.mainContent}>
                 {!selectedFrame ? (
                     <div
                         style={{
-                            display:
-                                "flex",
-                            gap: 24,
-                            flexWrap:
-                                "wrap",
-                            justifyContent:
-                                "center"
+                            display: "flex",
+                            gap: isMobile ? 14 : 24,
+                            flexWrap: "wrap",
+                            justifyContent: "center"
                         }}
                     >
-                        {frameOptions.map(
-                            (
-                                frame
-                            ) => (
-                                <div
-                                    key={
-                                        frame.id
-                                    }
+                        {frameOptions.map((frame) => (
+                            <div
+                                key={frame.id}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: 6
+                                }}
+                            >
+                                <img
+                                    src={frame.src}
+                                    alt={frame.id}
+                                    onClick={() => selectFrame(frame)}
+                                    onMouseEnter={(event) => {
+                                        event.currentTarget.style.transform =
+                                            "scale(1.08)";
+
+                                        event.currentTarget.style.boxShadow =
+                                            "0 12px 30px rgba(255,122,162,0.45)";
+                                    }}
+                                    onMouseLeave={(event) => {
+                                        event.currentTarget.style.transform =
+                                            "scale(1)";
+
+                                        event.currentTarget.style.boxShadow =
+                                            styles.frameThumb.boxShadow;
+                                    }}
                                     style={{
-                                        display:
-                                            "flex",
-                                        flexDirection:
-                                            "column",
-                                        alignItems:
-                                            "center",
-                                        gap: 6
+                                        ...styles.frameThumb,
+                                        transform: "scale(1)",
+                                        transition:
+                                            "transform 0.25s ease, box-shadow 0.25s ease"
+                                    }}
+                                />
+
+                                <span
+                                    style={{
+                                        fontFamily: "CantikaCute",
+                                        color: "#8c5b4a",
+                                        fontSize: isMobile ? 14 : 16
                                     }}
                                 >
-                                    <img
-                                        src={
-                                            frame.src
-                                        }
-                                        alt={
-                                            frame.id
-                                        }
-                                        onClick={() =>
-                                            selectFrame(
-                                                frame
-                                            )
-                                        }
-                                        onMouseEnter={(
-                                            event
-                                        ) => {
-                                            event.currentTarget.style.transform =
-                                                "scale(1.08)";
-
-                                            event.currentTarget.style.boxShadow =
-                                                "0 12px 30px rgba(255,122,162,0.45)";
-                                        }}
-                                        onMouseLeave={(
-                                            event
-                                        ) => {
-                                            event.currentTarget.style.transform =
-                                                "scale(1)";
-
-                                            event.currentTarget.style.boxShadow =
-                                                frameThumb.boxShadow;
-                                        }}
-                                        style={{
-                                            ...frameThumb,
-                                            transform:
-                                                "scale(1)",
-                                            transition:
-                                                "transform 0.25s ease, box-shadow 0.25s ease"
-                                        }}
-                                    />
-
-                                    <span
-                                        style={{
-                                            fontFamily:
-                                                "CantikaCute",
-                                            color:
-                                                "#8c5b4a",
-                                            fontSize: 16
-                                        }}
-                                    >
-                                        {
-                                            frame.slotCount
-                                        }{" "}
-                                        {
-                                            frame.slotCount ===
-                                            1
-                                                ? "photo"
-                                                : "photos"
-                                        }
-                                    </span>
-                                </div>
-                            )
-                        )}
+                                    {frame.slotCount}{" "}
+                                    {frame.slotCount === 1
+                                        ? "photo"
+                                        : "photos"}
+                                </span>
+                            </div>
+                        ))}
                     </div>
                 ) : (
-                    <div
-                        style={
-                            row
-                        }
-                    >
-                        <div>
+                    <div style={styles.row}>
+                        <div style={{ width: "100%", maxWidth: webcamColumnWidth }}>
                             {/* PHOTO MODE */}
 
-                            {mode ===
-                                "photo" && (
+                            {mode === "photo" && (
                                 <div
                                     style={{
-                                        position:
-                                            "relative",
-                                        width: 400
+                                        position: "relative",
+                                        width: webcamColumnWidth,
+                                        maxWidth: "100%",
+                                        margin: "0 auto"
                                     }}
                                 >
                                     <Webcam
-                                        audio={
-                                            false
-                                        }
-                                        ref={
-                                            webcamRef
-                                        }
+                                        audio={false}
+                                        ref={webcamRef}
                                         screenshotFormat="image/png"
-                                        screenshotQuality={
-                                            1
-                                        }
-                                        videoConstraints={
-                                            videoConstraints
-                                        }
-                                        mirrored={
-                                            true
-                                        }
+                                        screenshotQuality={1}
+                                        videoConstraints={videoConstraints}
+                                        mirrored={true}
                                         style={{
-                                            width:
-                                                "100%",
-                                            borderRadius:
-                                                12
+                                            width: "100%",
+                                            borderRadius: 12,
+                                            display: "block"
                                         }}
                                     />
 
                                     {/* COUNTDOWN */}
 
-                                    {countdown !==
-                                        null && (
+                                    {countdown !== null && (
                                         <div
                                             style={{
-                                                position:
-                                                    "absolute",
+                                                position: "absolute",
                                                 inset: 0,
-                                                display:
-                                                    "flex",
-                                                alignItems:
-                                                    "center",
-                                                justifyContent:
-                                                    "center",
-                                                fontSize:
-                                                    "10rem",
-                                                color:
-                                                    "white",
-                                                fontWeight:
-                                                    "bold",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: isMobile
+                                                    ? "6rem"
+                                                    : "10rem",
+                                                color: "white",
+                                                fontWeight: "bold",
                                                 textShadow:
                                                     "0 4px 20px rgba(0,0,0,0.5)",
                                                 background:
                                                     "rgba(0,0,0,0.25)",
-                                                borderRadius:
-                                                    12,
-                                                pointerEvents:
-                                                    "none"
+                                                borderRadius: 12,
+                                                pointerEvents: "none"
                                             }}
                                         >
-                                            {
-                                                countdown
-                                            }
+                                            {countdown}
                                         </div>
                                     )}
 
@@ -2152,33 +1668,30 @@ useEffect(() => {
 
                                     <div
                                         style={{
-                                            marginTop:
-                                                16,
-                                            display:
-                                                "flex",
+                                            marginTop: 16,
+                                            display: "flex",
                                             gap: 12,
-                                            flexWrap:
-                                                "wrap"
+                                            flexWrap: "wrap",
+                                            justifyContent: isMobile
+                                                ? "center"
+                                                : "flex-start"
                                         }}
                                     >
                                         {canTakePhoto && (
                                             <>
                                                 <button
                                                     style={
-                                                        buttonStyle
+                                                        styles.buttonStyle
                                                     }
-                                                    onClick={
-                                                        capturePhoto
-                                                    }
+                                                    onClick={capturePhoto}
                                                 >
                                                     Take Photo
                                                 </button>
 
                                                 <label
                                                     style={{
-                                                        ...buttonStyle,
-                                                        cursor:
-                                                            "pointer"
+                                                        ...styles.buttonStyle,
+                                                        cursor: "pointer"
                                                     }}
                                                 >
                                                     Upload
@@ -2186,31 +1699,23 @@ useEffect(() => {
                                                     <input
                                                         type="file"
                                                         accept="image/*"
-                                                        onChange={
-                                                            uploadPhoto
-                                                        }
+                                                        onChange={uploadPhoto}
                                                         style={{
-                                                            display:
-                                                                "none"
+                                                            display: "none"
                                                         }}
                                                     />
                                                 </label>
                                             </>
                                         )}
 
-                                        {photoCount >
-                                            0 && (
+                                        {photoCount > 0 && (
                                             <button
                                                 style={{
-                                                    ...buttonStyle,
-                                                    fontSize:
-                                                        22,
-                                                    padding:
-                                                        "4px 10px"
+                                                    ...styles.buttonStyle,
+                                                    fontSize: 22,
+                                                    padding: "4px 10px"
                                                 }}
-                                                onClick={
-                                                    redoLastPhoto
-                                                }
+                                                onClick={redoLastPhoto}
                                             >
                                                 ⟳
                                             </button>
@@ -2222,28 +1727,20 @@ useEffect(() => {
                                     {selectedFrameConfig && (
                                         <div
                                             style={{
-                                                marginTop:
-                                                    10,
-                                                textAlign:
-                                                    "center",
-                                                fontFamily:
-                                                    "CantikaCute",
-                                                color:
-                                                    "#8c5b4a",
-                                                fontSize:
-                                                    18
+                                                marginTop: 10,
+                                                textAlign: "center",
+                                                fontFamily: "CantikaCute",
+                                                color: "#8c5b4a",
+                                                fontSize: 18
                                             }}
                                         >
                                             Photo{" "}
                                             {Math.min(
-                                                photoCount +
-                                                    1,
+                                                photoCount + 1,
                                                 selectedFrameConfig.slotCount
                                             )}{" "}
                                             of{" "}
-                                            {
-                                                selectedFrameConfig.slotCount
-                                            }
+                                            {selectedFrameConfig.slotCount}
                                         </div>
                                     )}
                                 </div>
@@ -2251,15 +1748,12 @@ useEffect(() => {
 
                             {/* DECORATE MODE */}
 
-                            {mode ===
-                                "decorate" && (
+                            {mode === "decorate" && (
                                 <div
                                     style={{
-                                        width: 400,
-                                        display:
-                                            "flex",
-                                        flexDirection:
-                                            "column",
+                                        width: "100%",
+                                        display: "flex",
+                                        flexDirection: "column",
                                         gap: 16
                                     }}
                                 >
@@ -2267,67 +1761,51 @@ useEffect(() => {
 
                                     <div
                                         style={{
-                                            display:
-                                                "flex",
+                                            display: "flex",
                                             gap: 12,
-                                            flexWrap:
-                                                "wrap"
+                                            flexWrap: "wrap",
+                                            justifyContent: isMobile
+                                                ? "center"
+                                                : "flex-start"
                                         }}
                                     >
-                                        {stickerOptions.map(
-                                            (
-                                                src
-                                            ) => (
-                                                <img
-                                                    key={
-                                                        src
-                                                    }
-                                                    src={
-                                                        src
-                                                    }
-                                                    alt="sticker"
-                                                    onClick={() =>
-                                                        addSticker(
-                                                            src
-                                                        )
-                                                    }
-                                                    style={{
-                                                        width: 50,
-                                                        cursor:
-                                                            "pointer"
-                                                    }}
-                                                />
-                                            )
-                                        )}
+                                        {stickerOptions.map((src) => (
+                                            <img
+                                                key={src}
+                                                src={src}
+                                                alt="sticker"
+                                                onClick={() =>
+                                                    addSticker(src)
+                                                }
+                                                style={{
+                                                    width: stickerThumbSize,
+                                                    cursor: "pointer"
+                                                }}
+                                            />
+                                        ))}
                                     </div>
 
                                     {/* TEXT PANEL */}
 
                                     <div
                                         style={{
-                                            border:
-                                                "2px solid #8c5b4a",
-                                            borderRadius:
-                                                12,
-                                            padding:
-                                                14,
+                                            border: "2px solid #8c5b4a",
+                                            borderRadius: 12,
+                                            padding: 14,
                                             background:
                                                 "rgba(255,255,255,0.8)",
-                                            display:
-                                                "flex",
-                                            flexDirection:
-                                                "column",
-                                            gap: 10
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 10,
+                                            width: "100%",
+                                            boxSizing: "border-box"
                                         }}
                                     >
                                         <div
                                             style={{
-                                                fontFamily:
-                                                    "CantikaCute",
-                                                color:
-                                                    "#8c5b4a",
-                                                fontSize:
-                                                    22
+                                                fontFamily: "CantikaCute",
+                                                color: "#8c5b4a",
+                                                fontSize: isMobile ? 18 : 22
                                             }}
                                         >
                                             Add Custom Text
@@ -2337,52 +1815,35 @@ useEffect(() => {
 
                                         <input
                                             type="text"
-                                            value={
-                                                newText
-                                            }
-                                            onChange={(
-                                                event
-                                            ) =>
+                                            value={newText}
+                                            onChange={(event) =>
                                                 setNewText(
-                                                    event
-                                                        .target
-                                                        .value
+                                                    event.target.value
                                                 )
                                             }
-                                            onKeyDown={(
-                                                event
-                                            ) => {
-                                                if (
-                                                    event.key ===
-                                                    "Enter"
-                                                ) {
+                                            onKeyDown={(event) => {
+                                                if (event.key === "Enter") {
                                                     addText();
                                                 }
                                             }}
                                             placeholder="Type something..."
                                             style={{
-                                                padding:
-                                                    "10px",
-                                                fontSize:
-                                                    18,
-                                                border:
-                                                    "1px solid #8c5b4a",
-                                                borderRadius:
-                                                    8,
-                                                outline:
-                                                    "none"
+                                                padding: "10px",
+                                                fontSize: 16,
+                                                border: "1px solid #8c5b4a",
+                                                borderRadius: 8,
+                                                outline: "none",
+                                                width: "100%",
+                                                boxSizing: "border-box"
                                             }}
                                         />
 
                                         <button
                                             style={{
-                                                ...buttonStyle,
-                                                width:
-                                                    "100%"
+                                                ...styles.buttonStyle,
+                                                width: "100%"
                                             }}
-                                            onClick={
-                                                addText
-                                            }
+                                            onClick={addText}
                                         >
                                             ＋ Add Text
                                         </button>
@@ -2391,12 +1852,9 @@ useEffect(() => {
 
                                         <label
                                             style={{
-                                                fontFamily:
-                                                    "CantikaCute",
-                                                color:
-                                                    "#8c5b4a",
-                                                fontSize:
-                                                    17
+                                                fontFamily: "CantikaCute",
+                                                color: "#8c5b4a",
+                                                fontSize: 17
                                             }}
                                         >
                                             Font
@@ -2408,69 +1866,45 @@ useEffect(() => {
                                                     ? selectedTextItem.font
                                                     : textFont
                                             }
-                                            onChange={(
-                                                event
-                                            ) => {
+                                            onChange={(event) => {
                                                 const value =
-                                                    event
-                                                        .target
-                                                        .value;
+                                                    event.target.value;
 
-                                                if (
-                                                    selectedText !==
-                                                    null
-                                                ) {
+                                                if (selectedText !== null) {
                                                     updateSelectedText(
                                                         "font",
                                                         value
                                                     );
                                                 } else {
-                                                    setTextFont(
-                                                        value
-                                                    );
+                                                    setTextFont(value);
                                                 }
                                             }}
                                             style={{
-                                                padding:
-                                                    "8px",
-                                                fontSize:
-                                                    16,
-                                                borderRadius:
-                                                    8,
-                                                border:
-                                                    "1px solid #8c5b4a"
+                                                padding: "8px",
+                                                fontSize: 16,
+                                                borderRadius: 8,
+                                                border: "1px solid #8c5b4a",
+                                                width: "100%",
+                                                boxSizing: "border-box"
                                             }}
                                         >
-                                            {textFontOptions.map(
-                                                (
-                                                    font
-                                                ) => (
-                                                    <option
-                                                        key={
-                                                            font.id
-                                                        }
-                                                        value={
-                                                            font.family
-                                                        }
-                                                    >
-                                                        {
-                                                            font.name
-                                                        }
-                                                    </option>
-                                                )
-                                            )}
+                                            {textFontOptions.map((font) => (
+                                                <option
+                                                    key={font.id}
+                                                    value={font.family}
+                                                >
+                                                    {font.name}
+                                                </option>
+                                            ))}
                                         </select>
 
                                         {/* FONT SIZE */}
 
                                         <label
                                             style={{
-                                                fontFamily:
-                                                    "CantikaCute",
-                                                color:
-                                                    "#8c5b4a",
-                                                fontSize:
-                                                    17
+                                                fontFamily: "CantikaCute",
+                                                color: "#8c5b4a",
+                                                fontSize: 17
                                             }}
                                         >
                                             Size
@@ -2485,40 +1919,28 @@ useEffect(() => {
                                                     ? selectedTextItem.size
                                                     : textSize
                                             }
-                                            onChange={(
-                                                event
-                                            ) => {
-                                                const value =
-                                                    Number(
-                                                        event
-                                                            .target
-                                                            .value
-                                                    );
+                                            onChange={(event) => {
+                                                const value = Number(
+                                                    event.target.value
+                                                );
 
-                                                if (
-                                                    selectedText !==
-                                                    null
-                                                ) {
+                                                if (selectedText !== null) {
                                                     updateSelectedText(
                                                         "size",
                                                         value
                                                     );
                                                 } else {
-                                                    setTextSize(
-                                                        value
-                                                    );
+                                                    setTextSize(value);
                                                 }
                                             }}
+                                            style={{ width: "100%" }}
                                         />
 
                                         <div
                                             style={{
-                                                textAlign:
-                                                    "center",
-                                                fontFamily:
-                                                    "Poppins",
-                                                color:
-                                                    "#8c5b4a"
+                                                textAlign: "center",
+                                                fontFamily: "Poppins",
+                                                color: "#8c5b4a"
                                             }}
                                         >
                                             {selectedTextItem
@@ -2531,12 +1953,9 @@ useEffect(() => {
 
                                         <label
                                             style={{
-                                                fontFamily:
-                                                    "CantikaCute",
-                                                color:
-                                                    "#8c5b4a",
-                                                fontSize:
-                                                    17
+                                                fontFamily: "CantikaCute",
+                                                color: "#8c5b4a",
+                                                fontSize: 17
                                             }}
                                         >
                                             Text Color
@@ -2549,39 +1968,25 @@ useEffect(() => {
                                                     ? selectedTextItem.color
                                                     : textColor
                                             }
-                                            onChange={(
-                                                event
-                                            ) => {
+                                            onChange={(event) => {
                                                 const value =
-                                                    event
-                                                        .target
-                                                        .value;
+                                                    event.target.value;
 
-                                                if (
-                                                    selectedText !==
-                                                    null
-                                                ) {
+                                                if (selectedText !== null) {
                                                     updateSelectedText(
                                                         "color",
                                                         value
                                                     );
                                                 } else {
-                                                    setTextColor(
-                                                        value
-                                                    );
+                                                    setTextColor(value);
                                                 }
                                             }}
                                             style={{
-                                                width:
-                                                    "100%",
-                                                height:
-                                                    42,
-                                                cursor:
-                                                    "pointer",
-                                                border:
-                                                    "none",
-                                                background:
-                                                    "transparent"
+                                                width: "100%",
+                                                height: 42,
+                                                cursor: "pointer",
+                                                border: "none",
+                                                background: "transparent"
                                             }}
                                         />
 
@@ -2589,17 +1994,15 @@ useEffect(() => {
 
                                         <div
                                             style={{
-                                                display:
-                                                    "flex",
+                                                display: "flex",
                                                 gap: 8
                                             }}
                                         >
                                             <button
                                                 style={{
-                                                    ...buttonStyle,
+                                                    ...styles.buttonStyle,
                                                     flex: 1,
-                                                    fontWeight:
-                                                        "bold",
+                                                    fontWeight: "bold",
                                                     background:
                                                         selectedTextItem
                                                             ? selectedTextItem.bold
@@ -2611,8 +2014,7 @@ useEffect(() => {
                                                 }}
                                                 onClick={() => {
                                                     if (
-                                                        selectedText !==
-                                                        null
+                                                        selectedText !== null
                                                     ) {
                                                         updateSelectedText(
                                                             "bold",
@@ -2630,10 +2032,9 @@ useEffect(() => {
 
                                             <button
                                                 style={{
-                                                    ...buttonStyle,
+                                                    ...styles.buttonStyle,
                                                     flex: 1,
-                                                    fontStyle:
-                                                        "italic",
+                                                    fontStyle: "italic",
                                                     background:
                                                         selectedTextItem
                                                             ? selectedTextItem.italic
@@ -2645,8 +2046,7 @@ useEffect(() => {
                                                 }}
                                                 onClick={() => {
                                                     if (
-                                                        selectedText !==
-                                                        null
+                                                        selectedText !== null
                                                     ) {
                                                         updateSelectedText(
                                                             "italic",
@@ -2665,22 +2065,18 @@ useEffect(() => {
 
                                         {/* SELECTED TEXT MESSAGE */}
 
-                                        {selectedText !==
-                                            null && (
+                                        {selectedText !== null && (
                                             <div
                                                 style={{
-                                                    fontFamily:
-                                                        "Poppins",
-                                                    fontSize:
-                                                        13,
-                                                    color:
-                                                        "#8c5b4a",
-                                                    textAlign:
-                                                        "center"
+                                                    fontFamily: "Poppins",
+                                                    fontSize: 13,
+                                                    color: "#8c5b4a",
+                                                    textAlign: "center"
                                                 }}
                                             >
-                                                Text selected — drag it on the canvas.
-                                                Press Delete to remove it.
+                                                Text selected — drag it on
+                                                the canvas. Press Delete to
+                                                remove it.
                                             </div>
                                         )}
                                     </div>
@@ -2690,58 +2086,44 @@ useEffect(() => {
 
                         {/* CANVAS */}
 
-                        <div>
+                        <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <canvas
-                                ref={
-                                    canvasRef
-                                }
+                                ref={canvasRef}
                                 style={{
                                     ...getCanvasStyle(),
-                                    borderRadius:
-                                        16,
+                                    maxWidth: "100%",
+                                    borderRadius: 16,
                                     boxShadow:
                                         "0 10px 30px rgba(0,0,0,0.15)",
                                     cursor:
-                                        mode ===
-                                        "decorate"
+                                        mode === "decorate"
                                             ? "move"
-                                            : "grab"
+                                            : "grab",
+                                    touchAction: "none"
                                 }}
-                                onMouseDown={
-                                    handleMouseDown
-                                }
-                                onMouseMove={
-                                    handleMouseMove
-                                }
-                                onMouseUp={
-                                    handleMouseUp
-                                }
-                                onMouseLeave={
-                                    handleMouseUp
-                                }
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseUp}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                onTouchCancel={handleTouchEnd}
                             />
 
                             {/* DOWNLOAD */}
 
-                            {mode ===
-                                "decorate" && (
+                            {mode === "decorate" && (
                                 <div
                                     style={{
-                                        marginTop:
-                                            16,
-                                        display:
-                                            "flex",
-                                        justifyContent:
-                                            "center"
+                                        marginTop: 16,
+                                        display: "flex",
+                                        justifyContent: "center"
                                     }}
                                 >
                                     <button
-                                        style={
-                                            buttonStyle
-                                        }
-                                        onClick={
-                                            downloadPhoto
-                                        }
+                                        style={styles.buttonStyle}
+                                        onClick={downloadPhoto}
                                     >
                                         Download
                                     </button>
