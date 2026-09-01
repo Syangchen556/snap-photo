@@ -727,52 +727,66 @@ export default function PhotoBooth() {
         detectedSlots
     ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | LOAD FRAME
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| LOAD FRAME
+|--------------------------------------------------------------------------
+*/
 
-    useEffect(() => {
-        if (!selectedFrameConfig) {
-            return;
-        }
+useEffect(() => {
+    if (!selectedFrameConfig) {
+        return;
+    }
 
-        const img = new Image();
+    const img = new Image();
+    img.src = selectedFrameConfig.src;
 
-        img.src =
-            selectedFrameConfig.src;
+    img.onload = () => {
+        frameImgRef.current = img;
 
-        img.onload = () => {
-            frameImgRef.current =
-                img;
+        const slots = detectTransparentSlots(
+            img,
+            selectedFrameConfig.slotCount
+        );
 
-            const slots =
-                detectTransparentSlots(
-                    img,
-                    selectedFrameConfig.slotCount
-                );
+        setDetectedSlots(slots);
 
-            setDetectedSlots(slots);
-        };
+        setTimeout(() => {
+            drawCanvas();
+        }, 0);
+    };
 
-        img.onerror = () => {
-            console.error(
-                "Could not load frame:",
-                selectedFrameConfig.src
-            );
-        };
-    }, [selectedFrameConfig]);
+    img.onerror = () => {
+        console.error(
+            "Could not load frame:",
+            selectedFrameConfig.src
+        );
+    };
+    // drawCanvas intentionally omitted because this effect
+    // should only run when the selected frame changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [selectedFrameConfig]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | REDRAW
-    |--------------------------------------------------------------------------
-    */
 
-    useEffect(() => {
-        drawCanvas();
-    }, [drawCanvas]);
+/*
+|--------------------------------------------------------------------------
+| REDRAW
+|--------------------------------------------------------------------------
+*/
+
+useEffect(() => {
+    drawCanvas();
+    // drawCanvas intentionally omitted because its body is recreated
+    // on render and the state dependencies below control when redraws occur.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+    photos,
+    stickers,
+    textItems,
+    selectedSticker,
+    selectedText,
+    detectedSlots
+]);
 
     /*
     |--------------------------------------------------------------------------
