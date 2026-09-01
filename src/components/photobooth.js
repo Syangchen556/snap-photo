@@ -245,16 +245,17 @@ export default function PhotoBooth() {
         ? Math.min(viewportWidth - 48, 380)
         : 400;
 
-    const frameThumbSize = isSmallPhone
-        ? { width: 110, height: 146 }
-        : isMobile
-        ? { width: 140, height: 186 }
-        : { width: 180, height: 240 };
-
     const stickerThumbSize = isSmallPhone ? 40 : isMobile ? 44 : 50;
 
     const styles = useMemo(
-        () => ({
+        () => {
+            const frameThumbSize = isSmallPhone
+                ? { width: 110, height: 146 }
+                : isMobile
+                ? { width: 140, height: 186 }
+                : { width: 180, height: 240 };
+
+            return {
             centerCol: {
                 display: "flex",
                 flexDirection: "column",
@@ -324,8 +325,9 @@ export default function PhotoBooth() {
                 alignItems: isMobile ? "center" : "flex-start",
                 width: "100%"
             }
-        }),
-        [isMobile, isSmallPhone, frameThumbSize]
+            };
+        },
+        [isMobile, isSmallPhone]
     );
 
     /*
