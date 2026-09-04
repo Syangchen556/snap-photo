@@ -1509,6 +1509,25 @@ export default function PhotoBooth() {
 
     /*
     |--------------------------------------------------------------------------
+    | IS A DRAG CURRENTLY HAPPENING?
+    |--------------------------------------------------------------------------
+    |
+    | Used to toggle the canvas's touchAction: we only want to swallow
+    | native touch gestures (scroll/pinch) while the user is actively
+    | dragging a photo, sticker, or text box. The rest of the time the
+    | canvas should behave like normal page content so phones can scroll
+    | past it.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    const isDragging =
+        draggingPhotoIndex !== null ||
+        draggingSticker !== null ||
+        draggingText !== null;
+
+    /*
+    |--------------------------------------------------------------------------
     | RENDER
     |--------------------------------------------------------------------------
     */
@@ -2101,7 +2120,9 @@ export default function PhotoBooth() {
                                         mode === "decorate"
                                             ? "move"
                                             : "grab",
-                                    touchAction: "none"
+                                    touchAction: isDragging
+                                        ? "none"
+                                        : "pan-y"
                                 }}
                                 onMouseDown={handleMouseDown}
                                 onMouseMove={handleMouseMove}
