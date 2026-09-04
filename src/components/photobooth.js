@@ -8,11 +8,13 @@ import Webcam from "react-webcam";
 |
 | The folder name determines how many photos the frame needs.
 |
-| slot1 = 1 photo
-| slot2 = 2 photos
-| slot3 = 3 photos
-| slot4 = 4 photos
-| slot6 = 6 photos
+| 1-photo = 1 photo
+| 2-photo = 2 photos
+| 3-photo = 3 photos
+| 4-photo = 4 photos
+| 6-photo = 6 photos
+| 9-photo = 9 photos
+| cst = custom CST frames (photo count is included in each file name)
 |
 | The actual size and position of each slot is detected automatically
 | from the transparent areas of the PNG.
@@ -21,49 +23,67 @@ import Webcam from "react-webcam";
 */
 
 const frameOptions = [
+    // CST FRAMES
+    { id: "cst-3-photo-01", src: "assets/frames/cst/cst-3-photo-01.png", slotCount: 3 },
+    { id: "cst-3-photo-02", src: "assets/frames/cst/cst-3-photo-02.png", slotCount: 3 },
+    { id: "cst-3-photo-03", src: "assets/frames/cst/cst-3-photo-03.png", slotCount: 3 },
+    { id: "cst-3-photo-04", src: "assets/frames/cst/cst-3-photo-04.png", slotCount: 3 },
+    { id: "cst-3-photo-05", src: "assets/frames/cst/cst-3-photo-05.png", slotCount: 3 },
+    { id: "cst-3-photo-06", src: "assets/frames/cst/cst-3-photo-06.png", slotCount: 3 },
+    { id: "cst-4-photo-01", src: "assets/frames/cst/cst-4-photo-01.png", slotCount: 4 },
+
     // 1 PHOTO
-    { id: "f0", src: "assets/frames/slot1/f0.png", slotCount: 1 },
-    { id: "f14", src: "assets/frames/slot1/f14.png", slotCount: 1 },
-    { id: "f16", src: "assets/frames/slot1/f16.png", slotCount: 1 },
-    { id: "f2", src: "assets/frames/slot1/f2.png", slotCount: 1 },
-    { id: "f3", src: "assets/frames/slot1/f3.png", slotCount: 1 },
-    { id: "f4", src: "assets/frames/slot1/f4.png", slotCount: 1 },
-    { id: "f6", src: "assets/frames/slot1/f6.png", slotCount: 1 },
-    { id: "f8", src: "assets/frames/slot1/f8.png", slotCount: 1 },
-    { id: "bts1", src: "assets/frames/slot1/bts1.png", slotCount: 1 },
-    { id: "bt21w", src: "assets/frames/slot1/bt21w.png", slotCount: 1 },
-    { id: "bt21q", src: "assets/frames/slot1/bt21q.png", slotCount: 1 },
-    { id: "bt21e", src: "assets/frames/slot1/bt21e.png", slotCount: 1 },
-    { id: "bt21r", src: "assets/frames/slot1/bt21r.png", slotCount: 1 },
-    { id: "bt21t", src: "assets/frames/slot1/bt21t.png", slotCount: 1 },
-    { id: "bt21y", src: "assets/frames/slot1/bt21y.png", slotCount: 1 },
-    { id: "bt21u", src: "assets/frames/slot1/bt21u.png", slotCount: 1 },
+    { id: "frame-1-01", src: "assets/frames/1-photo/frame-01.png", slotCount: 1 },
+    { id: "frame-1-02", src: "assets/frames/1-photo/frame-02.png", slotCount: 1 },
+    { id: "frame-1-03", src: "assets/frames/1-photo/frame-03.png", slotCount: 1 },
+    { id: "frame-1-04", src: "assets/frames/1-photo/frame-04.png", slotCount: 1 },
+    { id: "frame-1-05", src: "assets/frames/1-photo/frame-05.png", slotCount: 1 },
+    { id: "frame-1-06", src: "assets/frames/1-photo/frame-06.png", slotCount: 1 },
+    { id: "frame-1-07", src: "assets/frames/1-photo/frame-07.png", slotCount: 1 },
+    { id: "frame-1-08", src: "assets/frames/1-photo/frame-08.png", slotCount: 1 },
+    { id: "frame-1-09", src: "assets/frames/1-photo/frame-09.png", slotCount: 1 },
+    { id: "frame-1-10", src: "assets/frames/1-photo/frame-10.png", slotCount: 1 },
+    { id: "frame-1-11", src: "assets/frames/1-photo/frame-11.png", slotCount: 1 },
+    { id: "frame-1-12", src: "assets/frames/1-photo/frame-12.png", slotCount: 1 },
+    { id: "frame-1-13", src: "assets/frames/1-photo/frame-13.png", slotCount: 1 },
+    { id: "frame-1-14", src: "assets/frames/1-photo/frame-14.png", slotCount: 1 },
+    { id: "frame-1-15", src: "assets/frames/1-photo/frame-15.png", slotCount: 1 },
+    { id: "frame-1-16", src: "assets/frames/1-photo/frame-16.png", slotCount: 1 },
+    { id: "frame-1-17", src: "assets/frames/1-photo/frame-17.png", slotCount: 1 },
 
     // 2 PHOTOS
-    { id: "f13", src: "assets/frames/slot2/f13.png", slotCount: 2 },
+    { id: "frame-2-01", src: "assets/frames/2-photo/frame-01.png", slotCount: 2 },
 
     // 3 PHOTOS
-    { id: "f10", src: "assets/frames/slot3/f10.png", slotCount: 3 },
-    { id: "f11", src: "assets/frames/slot3/f11.png", slotCount: 3 },
-    { id: "f12", src: "assets/frames/slot3/f12.png", slotCount: 3 },
-    { id: "f19", src: "assets/frames/slot3/f19.png", slotCount: 3 },
+    { id: "frame-3-01", src: "assets/frames/3-photo/frame-01.png", slotCount: 3 },
+    { id: "frame-3-02", src: "assets/frames/3-photo/frame-02.png", slotCount: 3 },
+    { id: "frame-3-03", src: "assets/frames/3-photo/frame-03.png", slotCount: 3 },
+    { id: "frame-3-04", src: "assets/frames/3-photo/frame-04.png", slotCount: 3 },
 
     // 4 PHOTOS
-    { id: "f15", src: "assets/frames/slot4/f15.png", slotCount: 4 },
-    { id: "f7", src: "assets/frames/slot4/f7.png", slotCount: 4 },
-    { id: "f23", src: "assets/frames/slot4/f23.png", slotCount: 4 },
-    { id: "cst", src: "assets/frames/slot4/cst.png", slotCount: 4 },
-    { id: "f20", src: "assets/frames/slot4/f20.png", slotCount: 4 },
-    { id: "f21", src: "assets/frames/slot4/f21.png", slotCount: 4 },
-    { id: "f22", src: "assets/frames/slot4/f22.png", slotCount: 4 },
+    { id: "frame-4-01", src: "assets/frames/4-photo/frame-01.png", slotCount: 4 },
+    { id: "frame-4-02", src: "assets/frames/4-photo/frame-02.png", slotCount: 4 },
+    { id: "frame-4-03", src: "assets/frames/4-photo/frame-03.png", slotCount: 4 },
+    { id: "frame-4-05", src: "assets/frames/4-photo/frame-05.png", slotCount: 4 },
+    { id: "frame-4-06", src: "assets/frames/4-photo/frame-06.png", slotCount: 4 },
+    { id: "frame-4-07", src: "assets/frames/4-photo/frame-07.png", slotCount: 4 },
+    { id: "frame-4-08", src: "assets/frames/4-photo/frame-08.png", slotCount: 4 },
+    { id: "frame-4-09", src: "assets/frames/4-photo/frame-09.png", slotCount: 4 },
+    { id: "frame-4-10", src: "assets/frames/4-photo/frame-10.png", slotCount: 4 },
+    { id: "frame-4-11", src: "assets/frames/4-photo/frame-11.png", slotCount: 4 },
+    { id: "frame-4-12", src: "assets/frames/4-photo/frame-12.png", slotCount: 4 },
+    { id: "frame-4-13", src: "assets/frames/4-photo/frame-13.png", slotCount: 4 },
+    { id: "frame-4-14", src: "assets/frames/4-photo/frame-14.png", slotCount: 4 },
+    { id: "frame-4-15", src: "assets/frames/4-photo/frame-15.png", slotCount: 4 },
+    { id: "frame-4-16", src: "assets/frames/4-photo/frame-16.png", slotCount: 4 },
 
     // 6 PHOTOS
-    { id: "f1", src: "assets/frames/slot6/f1.png", slotCount: 6 },
-    { id: "f5", src: "assets/frames/slot6/f5.png", slotCount: 6 },
-    { id: "f9", src: "assets/frames/slot6/f9.png", slotCount: 6 },
+    { id: "frame-6-01", src: "assets/frames/6-photo/frame-01.png", slotCount: 6 },
+    { id: "frame-6-02", src: "assets/frames/6-photo/frame-02.png", slotCount: 6 },
+    { id: "frame-6-03", src: "assets/frames/6-photo/frame-03.png", slotCount: 6 },
 
     // 9 PHOTOS
-    { id: "cake", src: "assets/frames/slot6/cake.png", slotCount: 9 },
+    { id: "frame-9-01", src: "assets/frames/9-photo/frame-01.png", slotCount: 9 },
 ];
 
 /*
@@ -362,6 +382,17 @@ export default function PhotoBooth() {
             facingMode: "user"
         };
     }, [isMobile, slotAspectRatio]);
+
+    const isSingleSlotFrame = selectedFrameConfig?.slotCount === 1;
+    const maxCameraHeight = isMobile ? 520 : 600;
+    const cameraPreviewWidth =
+        isSingleSlotFrame && activeSlot
+            ? Math.min(webcamColumnWidth, maxCameraHeight * slotAspectRatio)
+            : webcamColumnWidth;
+    const cameraPreviewHeight =
+        isSingleSlotFrame && activeSlot
+            ? cameraPreviewWidth / slotAspectRatio
+            : null;
 
     /*
     |--------------------------------------------------------------------------
@@ -1639,7 +1670,7 @@ export default function PhotoBooth() {
                                 <div
                                     style={{
                                         position: "relative",
-                                        width: webcamColumnWidth,
+                                        width: cameraPreviewWidth,
                                         maxWidth: "100%",
                                         margin: "0 auto"
                                     }}
@@ -1653,6 +1684,12 @@ export default function PhotoBooth() {
                                         mirrored={true}
                                         style={{
                                             width: "100%",
+                                            ...(cameraPreviewHeight
+                                                ? {
+                                                      height: cameraPreviewHeight,
+                                                      objectFit: "cover"
+                                                  }
+                                                : {}),
                                             borderRadius: 12,
                                             display: "block"
                                         }}
