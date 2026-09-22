@@ -100,7 +100,6 @@ const frameOptions = [
 */
 
 const stickerOptions = [
-    "assets/stickers/prog01.png",
     "assets/stickers/A0.png",
     "assets/stickers/A1.png",
     "assets/stickers/A2.png",
