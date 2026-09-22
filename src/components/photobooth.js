@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Webcam from "react-webcam";
+import QRCode from "qrcode";
+import { upload } from "@vercel/blob/client";
 
 /*
 |--------------------------------------------------------------------------
@@ -24,66 +26,71 @@ import Webcam from "react-webcam";
 
 const frameOptions = [
     // CST FRAMES
-    { id: "cst-3-photo-01", src: "assets/frames/cst/cst-3-photo-01.png", slotCount: 3 },
-    { id: "cst-3-photo-02", src: "assets/frames/cst/cst-3-photo-02.png", slotCount: 3 },
-    { id: "cst-3-photo-03", src: "assets/frames/cst/cst-3-photo-03.png", slotCount: 3 },
-    { id: "cst-3-photo-04", src: "assets/frames/cst/cst-3-photo-04.png", slotCount: 3 },
-    { id: "cst-3-photo-05", src: "assets/frames/cst/cst-3-photo-05.png", slotCount: 3 },
-    { id: "cst-3-photo-06", src: "assets/frames/cst/cst-3-photo-06.png", slotCount: 3 },
-    { id: "cst-4-photo-01", src: "assets/frames/cst/cst-4-photo-01.png", slotCount: 4 },
+    { id: "cst-3-photo-01", src: "assets/frames/cst/cst-3-photo-01.webp", slotCount: 3 },
+    { id: "cst-3-photo-02", src: "assets/frames/cst/cst-3-photo-02.webp", slotCount: 3 },
+    { id: "cst-3-photo-03", src: "assets/frames/cst/cst-3-photo-03.webp", slotCount: 3 },
+    { id: "cst-3-photo-04", src: "assets/frames/cst/cst-3-photo-04.webp", slotCount: 3 },
+    { id: "cst-3-photo-05", src: "assets/frames/cst/cst-3-photo-05.webp", slotCount: 3 },
+    { id: "cst-3-photo-06", src: "assets/frames/cst/cst-3-photo-06.webp", slotCount: 3 },
+    { id: "cst-3-photo-07", src: "assets/frames/cst/cst-3-photo-07.png", slotCount: 3 },
+    { id: "cst-4-photo-01", src: "assets/frames/cst/cst-4-photo-01.webp", slotCount: 4 },
 
     // 1 PHOTO
-    { id: "frame-1-01", src: "assets/frames/1-photo/frame-01.png", slotCount: 1 },
-    { id: "frame-1-02", src: "assets/frames/1-photo/frame-02.png", slotCount: 1 },
-    { id: "frame-1-03", src: "assets/frames/1-photo/frame-03.png", slotCount: 1 },
-    { id: "frame-1-04", src: "assets/frames/1-photo/frame-04.png", slotCount: 1 },
-    { id: "frame-1-05", src: "assets/frames/1-photo/frame-05.png", slotCount: 1 },
-    { id: "frame-1-06", src: "assets/frames/1-photo/frame-06.png", slotCount: 1 },
-    { id: "frame-1-07", src: "assets/frames/1-photo/frame-07.png", slotCount: 1 },
-    { id: "frame-1-08", src: "assets/frames/1-photo/frame-08.png", slotCount: 1 },
-    { id: "frame-1-09", src: "assets/frames/1-photo/frame-09.png", slotCount: 1 },
-    { id: "frame-1-10", src: "assets/frames/1-photo/frame-10.png", slotCount: 1 },
-    { id: "frame-1-11", src: "assets/frames/1-photo/frame-11.png", slotCount: 1 },
-    { id: "frame-1-12", src: "assets/frames/1-photo/frame-12.png", slotCount: 1 },
-    { id: "frame-1-13", src: "assets/frames/1-photo/frame-13.png", slotCount: 1 },
-    { id: "frame-1-14", src: "assets/frames/1-photo/frame-14.png", slotCount: 1 },
-    { id: "frame-1-15", src: "assets/frames/1-photo/frame-15.png", slotCount: 1 },
-    { id: "frame-1-16", src: "assets/frames/1-photo/frame-16.png", slotCount: 1 },
-    { id: "frame-1-17", src: "assets/frames/1-photo/frame-17.png", slotCount: 1 },
+    { id: "frame-1-01", src: "assets/frames/1-photo/frame-01.webp", slotCount: 1 },
+    { id: "frame-1-02", src: "assets/frames/1-photo/frame-02.webp", slotCount: 1 },
+    { id: "frame-1-03", src: "assets/frames/1-photo/frame-03.webp", slotCount: 1 },
+    { id: "frame-1-04", src: "assets/frames/1-photo/frame-04.webp", slotCount: 1 },
+    { id: "frame-1-05", src: "assets/frames/1-photo/frame-05.webp", slotCount: 1 },
+    { id: "frame-1-06", src: "assets/frames/1-photo/frame-06.webp", slotCount: 1 },
+    { id: "frame-1-07", src: "assets/frames/1-photo/frame-07.webp", slotCount: 1 },
+    { id: "frame-1-08", src: "assets/frames/1-photo/frame-08.webp", slotCount: 1 },
+    { id: "frame-1-09", src: "assets/frames/1-photo/frame-09.webp", slotCount: 1 },
+    { id: "frame-1-10", src: "assets/frames/1-photo/frame-10.webp", slotCount: 1 },
+    { id: "frame-1-11", src: "assets/frames/1-photo/frame-11.webp", slotCount: 1 },
+    { id: "frame-1-12", src: "assets/frames/1-photo/frame-12.webp", slotCount: 1 },
+    { id: "frame-1-13", src: "assets/frames/1-photo/frame-13.webp", slotCount: 1 },
+    { id: "frame-1-14", src: "assets/frames/1-photo/frame-14.webp", slotCount: 1 },
+    { id: "frame-1-15", src: "assets/frames/1-photo/frame-15.webp", slotCount: 1 },
+    { id: "frame-1-16", src: "assets/frames/1-photo/frame-16.webp", slotCount: 1 },
+    { id: "frame-1-17", src: "assets/frames/1-photo/frame-17.webp", slotCount: 1 },
+    { id: "frame-1-18", src: "assets/frames/1-photo/frame-18.png", slotCount: 1 },
+    { id: "frame-1-19", src: "assets/frames/1-photo/frame-19.png", slotCount: 1 },
+    { id: "frame-1-20", src: "assets/frames/1-photo/frame-20.png", slotCount: 1 },
+    { id: "frame-1-21", src: "assets/frames/1-photo/frame-21.png", slotCount: 1 },
 
     // 2 PHOTOS
-    { id: "frame-2-01", src: "assets/frames/2-photo/frame-01.png", slotCount: 2 },
+    { id: "frame-2-01", src: "assets/frames/2-photo/frame-01.webp", slotCount: 2 },
 
     // 3 PHOTOS
-    { id: "frame-3-01", src: "assets/frames/3-photo/frame-01.png", slotCount: 3 },
-    { id: "frame-3-02", src: "assets/frames/3-photo/frame-02.png", slotCount: 3 },
-    { id: "frame-3-03", src: "assets/frames/3-photo/frame-03.png", slotCount: 3 },
-    { id: "frame-3-04", src: "assets/frames/3-photo/frame-04.png", slotCount: 3 },
+    { id: "frame-3-01", src: "assets/frames/3-photo/frame-01.webp", slotCount: 3 },
+    { id: "frame-3-02", src: "assets/frames/3-photo/frame-02.webp", slotCount: 3 },
+    { id: "frame-3-03", src: "assets/frames/3-photo/frame-03.webp", slotCount: 3 },
+    { id: "frame-3-04", src: "assets/frames/3-photo/frame-04.webp", slotCount: 3 },
 
     // 4 PHOTOS
-    { id: "frame-4-01", src: "assets/frames/4-photo/frame-01.png", slotCount: 4 },
-    { id: "frame-4-02", src: "assets/frames/4-photo/frame-02.png", slotCount: 4 },
-    { id: "frame-4-03", src: "assets/frames/4-photo/frame-03.png", slotCount: 4 },
-    { id: "frame-4-05", src: "assets/frames/4-photo/frame-05.png", slotCount: 4 },
-    { id: "frame-4-06", src: "assets/frames/4-photo/frame-06.png", slotCount: 4 },
-    { id: "frame-4-07", src: "assets/frames/4-photo/frame-07.png", slotCount: 4 },
-    { id: "frame-4-08", src: "assets/frames/4-photo/frame-08.png", slotCount: 4 },
-    { id: "frame-4-09", src: "assets/frames/4-photo/frame-09.png", slotCount: 4 },
-    { id: "frame-4-10", src: "assets/frames/4-photo/frame-10.png", slotCount: 4 },
-    { id: "frame-4-11", src: "assets/frames/4-photo/frame-11.png", slotCount: 4 },
-    { id: "frame-4-12", src: "assets/frames/4-photo/frame-12.png", slotCount: 4 },
-    { id: "frame-4-13", src: "assets/frames/4-photo/frame-13.png", slotCount: 4 },
-    { id: "frame-4-14", src: "assets/frames/4-photo/frame-14.png", slotCount: 4 },
-    { id: "frame-4-15", src: "assets/frames/4-photo/frame-15.png", slotCount: 4 },
-    { id: "frame-4-16", src: "assets/frames/4-photo/frame-16.png", slotCount: 4 },
+    { id: "frame-4-01", src: "assets/frames/4-photo/frame-01.webp", slotCount: 4 },
+    { id: "frame-4-02", src: "assets/frames/4-photo/frame-02.webp", slotCount: 4 },
+    { id: "frame-4-03", src: "assets/frames/4-photo/frame-03.webp", slotCount: 4 },
+    { id: "frame-4-05", src: "assets/frames/4-photo/frame-05.webp", slotCount: 4 },
+    { id: "frame-4-06", src: "assets/frames/4-photo/frame-06.webp", slotCount: 4 },
+    { id: "frame-4-07", src: "assets/frames/4-photo/frame-07.webp", slotCount: 4 },
+    { id: "frame-4-08", src: "assets/frames/4-photo/frame-08.webp", slotCount: 4 },
+    { id: "frame-4-09", src: "assets/frames/4-photo/frame-09.webp", slotCount: 4 },
+    { id: "frame-4-10", src: "assets/frames/4-photo/frame-10.webp", slotCount: 4 },
+    { id: "frame-4-11", src: "assets/frames/4-photo/frame-11.webp", slotCount: 4 },
+    { id: "frame-4-12", src: "assets/frames/4-photo/frame-12.webp", slotCount: 4 },
+    { id: "frame-4-13", src: "assets/frames/4-photo/frame-13.webp", slotCount: 4 },
+    { id: "frame-4-14", src: "assets/frames/4-photo/frame-14.webp", slotCount: 4 },
+    { id: "frame-4-15", src: "assets/frames/4-photo/frame-15.webp", slotCount: 4 },
+    { id: "frame-4-16", src: "assets/frames/4-photo/frame-16.webp", slotCount: 4 },
 
     // 6 PHOTOS
-    { id: "frame-6-01", src: "assets/frames/6-photo/frame-01.png", slotCount: 6 },
-    { id: "frame-6-02", src: "assets/frames/6-photo/frame-02.png", slotCount: 6 },
-    { id: "frame-6-03", src: "assets/frames/6-photo/frame-03.png", slotCount: 6 },
+    { id: "frame-6-01", src: "assets/frames/6-photo/frame-01.webp", slotCount: 6 },
+    { id: "frame-6-02", src: "assets/frames/6-photo/frame-02.webp", slotCount: 6 },
+    { id: "frame-6-03", src: "assets/frames/6-photo/frame-03.webp", slotCount: 6 },
 
     // 9 PHOTOS
-    { id: "frame-9-01", src: "assets/frames/9-photo/frame-01.png", slotCount: 9 },
+    { id: "frame-9-01", src: "assets/frames/9-photo/frame-01.webp", slotCount: 9 },
 ];
 
 /*
@@ -93,6 +100,19 @@ const frameOptions = [
 */
 
 const stickerOptions = [
+    "assets/stickers/prog01.png",
+    "assets/stickers/A0.png",
+    "assets/stickers/A1.png",
+    "assets/stickers/A2.png",
+    "assets/stickers/A3.png",
+    "assets/stickers/A4.png",
+    "assets/stickers/A5.png",
+    "assets/stickers/A6.png",
+    "assets/stickers/A7.png",
+    "assets/stickers/A8.png",
+    "assets/stickers/A9.png",
+    "assets/stickers/Paw1.png",
+    "assets/stickers/paw2.png",
     "assets/stickers/Xiao1.png",
     "assets/stickers/Xiao2.png",
     "assets/stickers/Xiao3.png",
@@ -220,6 +240,10 @@ export default function PhotoBooth() {
     const [draggingText, setDraggingText] = useState(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [countdown, setCountdown] = useState(null);
+    const [transferStatus, setTransferStatus] = useState("idle");
+    const [transferQrCode, setTransferQrCode] = useState(null);
+    const [transferUrl, setTransferUrl] = useState(null);
+    const [transferError, setTransferError] = useState(null);
 
     const [stickers, setStickers] = useState([]);
     const [selectedSticker, setSelectedSticker] = useState(null);
@@ -412,6 +436,10 @@ export default function PhotoBooth() {
         setDetectedSlots([]);
         setMode("photo");
         setCanTakePhoto(true);
+        setTransferStatus("idle");
+        setTransferQrCode(null);
+        setTransferUrl(null);
+        setTransferError(null);
     };
 
     /*
@@ -830,6 +858,10 @@ export default function PhotoBooth() {
         setSelectedText(null);
         setMode("photo");
         setCanTakePhoto(true);
+        setTransferStatus("idle");
+        setTransferQrCode(null);
+        setTransferUrl(null);
+        setTransferError(null);
     };
 
     /*
@@ -1471,7 +1503,7 @@ export default function PhotoBooth() {
     |--------------------------------------------------------------------------
     */
 
-    const downloadPhoto = () => {
+    const createTransferQrCode = async () => {
         if (!canvasRef.current) {
             return;
         }
@@ -1479,21 +1511,66 @@ export default function PhotoBooth() {
         const previousSticker = selectedSticker;
         const previousText = selectedText;
 
+        setTransferStatus("uploading");
+        setTransferQrCode(null);
+        setTransferUrl(null);
+        setTransferError(null);
         setSelectedSticker(null);
         setSelectedText(null);
 
-        setTimeout(() => {
-            drawCanvas();
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 100));
 
-            const link = document.createElement("a");
+            const photoBlob = await new Promise((resolve, reject) => {
+                canvasRef.current.toBlob((blob) => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error("Could not prepare the photo."));
+                    }
+                }, "image/png");
+            });
 
-            link.href = canvasRef.current.toDataURL("image/png");
-            link.download = "photo-strip.png";
-            link.click();
+            const photoId =
+                typeof crypto.randomUUID === "function"
+                    ? crypto.randomUUID()
+                    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const uploadedPhoto = await upload(
+                `photos/${photoId}.png`,
+                photoBlob,
+                {
+                    access: "public",
+                    contentType: "image/png",
+                    handleUploadUrl: "/api/photo-upload"
+                }
+            );
 
+            const downloadUrl = uploadedPhoto.downloadUrl || uploadedPhoto.url;
+
+            if (!downloadUrl) {
+                throw new Error("Could not upload the photo.");
+            }
+
+            const qrCode = await QRCode.toDataURL(downloadUrl, {
+                width: 280,
+                margin: 2,
+                errorCorrectionLevel: "M",
+                color: {
+                    dark: "#541d51",
+                    light: "#ffffff"
+                }
+            });
+
+            setTransferUrl(downloadUrl);
+            setTransferQrCode(qrCode);
+            setTransferStatus("ready");
+        } catch (error) {
+            setTransferStatus("error");
+            setTransferError(error.message || "Could not create the QR code.");
+        } finally {
             setSelectedSticker(previousSticker);
             setSelectedText(previousText);
-        }, 50);
+        }
     };
 
     /*
@@ -2171,22 +2248,102 @@ export default function PhotoBooth() {
                                 onTouchCancel={handleTouchEnd}
                             />
 
-                            {/* DOWNLOAD */}
+                            {/* PHOTO TRANSFER */}
 
                             {mode === "decorate" && (
                                 <div
                                     style={{
                                         marginTop: 16,
                                         display: "flex",
-                                        justifyContent: "center"
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 12
                                     }}
                                 >
                                     <button
-                                        style={styles.buttonStyle}
-                                        onClick={downloadPhoto}
+                                        style={{
+                                            ...styles.buttonStyle,
+                                            opacity:
+                                                transferStatus === "uploading"
+                                                    ? 0.65
+                                                    : 1
+                                        }}
+                                        onClick={createTransferQrCode}
+                                        disabled={transferStatus === "uploading"}
                                     >
-                                        Download
+                                        {transferStatus === "uploading"
+                                            ? "Creating QR code…"
+                                            : transferStatus === "ready"
+                                            ? "Create a new QR code"
+                                            : "Send to phone"}
                                     </button>
+
+                                    {transferStatus === "ready" &&
+                                        transferQrCode && (
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    alignItems: "center",
+                                                    gap: 8,
+                                                    padding: 14,
+                                                    borderRadius: 12,
+                                                    background: "white",
+                                                    boxShadow:
+                                                        "0 8px 24px rgba(0,0,0,0.12)"
+                                                }}
+                                            >
+                                                <img
+                                                    src={transferQrCode}
+                                                    alt="QR code for device transfer"
+                                                    style={{
+                                                        width: isMobile
+                                                            ? 220
+                                                            : 260,
+                                                        maxWidth: "100%"
+                                                    }}
+                                                />
+                                                <div
+                                                    style={{
+                                                        fontFamily: "Poppins",
+                                                        color: "#541d51",
+                                                        textAlign: "center",
+                                                        fontSize: 14
+                                                    }}
+                                                >
+                                                    Scan to download your photo.
+                                                    It is removed automatically
+                                                    after a short time.
+                                                </div>
+                                                <a
+                                                    href={transferUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    style={{
+                                                        color: "#8c5b4a",
+                                                        fontFamily: "Poppins",
+                                                        fontSize: 13
+                                                    }}
+                                                >
+                                                    Open download link
+                                                </a>
+                                            </div>
+                                        )}
+
+                                    {transferStatus === "error" && (
+                                        <div
+                                            role="alert"
+                                            style={{
+                                                maxWidth: 360,
+                                                color: "#9b1c1c",
+                                                fontFamily: "Poppins",
+                                                fontSize: 14,
+                                                textAlign: "center"
+                                            }}
+                                        >
+                                            {transferError}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
