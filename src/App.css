@@ -2,6 +2,17 @@
   text-align: center;
 }
 
+.access-screen { min-height: 100dvh; display: grid; place-items: center; padding: 24px; box-sizing: border-box; background: #faf2f8; }
+.access-card { box-sizing: border-box; width: 100%; max-width: 400px; padding: 36px; border-radius: 24px; background: white; box-shadow: 0 12px 48px #541d5114; text-align: center; color: #541d51; }
+.access-card h1 { margin: 12px 0; font-family: CantikaCute, sans-serif; }
+.access-card p { line-height: 1.5; }
+.access-card label { display: block; text-align: left; margin: 24px 0 8px; font-weight: 600; }
+.access-card input { box-sizing: border-box; width: 100%; padding: 13px; border: 1px solid #bda6ba; border-radius: 10px; font: inherit; }
+.access-card input:focus-visible, .access-card button:focus-visible { outline: 3px solid #b77bad; outline-offset: 3px; }
+.access-card button { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 10px; background: #541d51; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+.access-card button:disabled { opacity: .6; cursor: default; }
+.access-card .access-error { color: #a51c38; text-align: left; }
+
 .App-logo {
   height: 40vmin;
   pointer-events: none;

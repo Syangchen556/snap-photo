@@ -1,4 +1,5 @@
 const { handleUpload } = require("@vercel/blob/client");
+const { authenticated } = require('../lib/access');
 
 const MAX_PHOTO_SIZE = 12 * 1024 * 1024;
 
@@ -13,6 +14,9 @@ module.exports = async function photoUpload(request, response) {
             body: request.body,
             request,
             onBeforeGenerateToken: async (pathname) => {
+                if (!authenticated(request)) {
+                    throw new Error('Please unlock the site with your PIN before uploading.');
+                }
                 if (!/^photos\/[a-zA-Z0-9-]+\.png$/.test(pathname)) {
                     throw new Error("Invalid photo path.");
                 }
