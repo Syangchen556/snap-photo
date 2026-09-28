@@ -7,7 +7,7 @@ module.exports = async function access(request, response) {
     return response.status(405).json({ error: 'Method not allowed.' });
   }
   const pin = request.body && request.body.pin;
-  if (typeof pin !== 'string' || pin.length > 128 || !equal(pin, process.env.ACCESS_PIN || 'sky508')) {
+  if (typeof pin !== 'string' || pin.length > 128 || !equal(pin, process.env.ACCESS_PIN || '1509')) {
     return response.status(401).json({ error: 'Incorrect PIN. Please try again.' });
   }
   try {

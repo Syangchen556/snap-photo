@@ -14,7 +14,7 @@ test('keeps the booth closed until the server accepts the PIN', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Unlock photo booth' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect PIN');
   expect(screen.queryByText('Photo booth content')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: 'sky508' } });
+  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: '1509' } });
   fireEvent.click(screen.getByRole('button', { name: 'Unlock photo booth' }));
   expect(await screen.findByText('Photo booth content')).toBeInTheDocument();
 });
@@ -22,7 +22,7 @@ test('keeps the booth closed until the server accepts the PIN', async () => {
 test('stays locked when the server cannot be reached', async () => {
   global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
   render(<App />);
-  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: 'sky508' } });
+  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: '1509' } });
   fireEvent.click(screen.getByRole('button', { name: 'Unlock photo booth' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('Could not connect');
   expect(screen.queryByText('Photo booth content')).not.toBeInTheDocument();
@@ -33,7 +33,7 @@ test('explains when the host does not serve the PIN API', async () => {
     ok: false, status: 404, json: async () => { throw new SyntaxError('HTML response'); },
   });
   render(<App />);
-  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: 'sky508' } });
+  fireEvent.change(screen.getByLabelText('Access PIN'), { target: { value: '1509' } });
   fireEvent.click(screen.getByRole('button', { name: 'Unlock photo booth' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('PIN service is unavailable');
   expect(screen.queryByText('Photo booth content')).not.toBeInTheDocument();

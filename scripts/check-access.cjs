@@ -21,7 +21,7 @@ async function main() {
     const wrong = await post('wrong');
     assert.equal(wrong.status, 401);
     assert.equal(wrong.headers.get('set-cookie'), null);
-    const right = await post('sky508');
+    const right = await post('1509');
     assert.equal(right.status, 200);
     assert.deepEqual(await right.json(), { unlocked: true });
     const cookie = right.headers.get('set-cookie');

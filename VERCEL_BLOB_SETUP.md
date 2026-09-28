@@ -23,7 +23,7 @@ development environment so the `/api/photo-upload` function is available.
 ## PIN access
 
 The opening screen checks the PIN with `/api/access`. The default PIN is
-`sky508`; override it with the server environment variable `ACCESS_PIN`.
+`1509`; override it with the server environment variable `ACCESS_PIN`.
 Set `ACCESS_SESSION_SECRET` to a long random value in Vercel, or the existing
 `BLOB_READ_WRITE_TOKEN` is used to sign sessions. Redeploy to apply changes.
 Never use a `REACT_APP_` variable for these secrets.
