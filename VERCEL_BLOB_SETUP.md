@@ -30,8 +30,9 @@ Never use a `REACT_APP_` variable for these secrets.
 
 Each page opening or refresh requires the PIN. Successful entry creates an
 HttpOnly session cookie valid for eight hours, required for photo uploads.
-Use Vercel local development for testing; `npm start` alone has no API server.
+The PIN endpoint runs with `npm start`; restart the development server after changing `src/setupProxy.js`. Local development generates a temporary session secret if none is configured. Use Vercel local development to test photo uploads as well. Published sites still need the Vercel API functions and a configured session secret (or Blob token).
 Static website assets and existing public photo QR URLs remain public; this
 gate protects the normal booth interface and upload authorization, not all
 files at the hosting layer. Use hosting-level access protection if every
 resource must be private.
+

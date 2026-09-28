@@ -33,7 +33,7 @@ const frameOptions = [
     { id: "cst-3-photo-05", src: "assets/frames/cst/cst-3-photo-05.webp", slotCount: 3 },
     { id: "cst-3-photo-06", src: "assets/frames/cst/cst-3-photo-06.webp", slotCount: 3 },
     { id: "cst-3-photo-07", src: "assets/frames/cst/cst-3-photo-07.png", slotCount: 3 },
-    { id: "cst-4-photo-01", src: "assets/frames/cst/cst-4-photo-01.webp", slotCount: 4 },
+    { id: "cst-4-photo-01", src: "assets/frames/cst/cst-4-photo-01.webp", slotCount: 3 },
 
     // 1 PHOTO
     { id: "frame-1-01", src: "assets/frames/1-photo/frame-01.webp", slotCount: 1 },

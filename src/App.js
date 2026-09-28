@@ -22,7 +22,11 @@ function App() {
         credentials: 'same-origin',
         body: JSON.stringify({ pin }),
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => null);
+      if (!result || response.status === 404 || response.status === 405) {
+        setError('The PIN service is unavailable. For a local preview, restart the app. For the published site, deploy the API functions with the website.');
+        return;
+      }
       if (!response.ok || result.unlocked !== true) {
         setError(result.error || 'Could not unlock. Please try again.');
         return;
@@ -94,3 +98,4 @@ function App() {
 }
 
 export default App;
+
